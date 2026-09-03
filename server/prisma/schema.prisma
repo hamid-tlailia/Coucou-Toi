@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AuthProvider {
+  email
+  google
+  apple
+}
+
+enum PlanId {
+  free
+  starter
+  growth
+  business
+}
+
+enum BillingCycle {
+  monthly
+  yearly
+}
+
+enum OrderStatus {
+  new
+  processing
+  shipped
+  delivered
+}
+
+enum PayStatus {
+  paid
+  unpaid
+  cod
+}
+
+enum OrderSource {
+  whatsapp
+  instagram
+  facebook
+  tiktok
+  manual
+}
+
+model User {
+  id            String        @id @default(uuid())
+  email         String        @unique
+  passwordHash  String?       // null for OAuth-only accounts
+  name          String
+  store         String?
+  provider      AuthProvider
+  providerSub   String?       // Google `sub` / Apple `sub` — used to re-match on future sign-ins
+  plan          PlanId        @default(free)
+  cycle         BillingCycle  @default(monthly)
+  quotaUsed     Int           @default(0)
+  quotaResetAt  DateTime      @default(now())
+  createdAt     DateTime      @default(now())
+
+  orders        Order[]
+  refreshTokens RefreshToken[]
+  subscriptions Subscription[]
+
+  @@index([providerSub])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique   // we store a hash, never the raw token
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  revokedAt DateTime?
+  replacedBy String?           // rotation chain — lets us detect reuse of a stolen token
+
+  @@index([userId])
+}
+
+model Order {
+  id         String      @id @default(cuid())
+  userId     String
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customer   String
+  phone      String
+  city       String?
+  items      String?
+  total      Decimal     @db.Decimal(10, 3) // TND has 3 decimal places (millimes)
+  status     OrderStatus @default(new)
+  pay        PayStatus   @default(unpaid)
+  source     OrderSource @default(manual)
+  code       String      @unique // tracking code encoded in the receipt QR
+  date       DateTime    @default(now())
+  idemKey    String?     // idempotency key from the client, dedupes retried creates
+
+  @@unique([userId, idemKey])
+  @@index([userId, date])
+  @@index([code])
+  @@index([userId, customer])
+}
+
+model Subscription {
+  id              String       @id @default(uuid())
+  userId          String
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan            PlanId
+  cycle           BillingCycle
+  platform        String       // "ios" | "android"
+  originalTxnId   String       @unique // Apple originalTransactionId / Google orderId root
+  latestTxnId     String
+  status          String       // active | expired | grace_period | revoked
+  expiresAt       DateTime
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([userId])
+}
