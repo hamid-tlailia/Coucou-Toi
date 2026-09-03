@@ -15,8 +15,11 @@ export const IAP_SKUS = {
 // Prices in Tunisian dinar (TND) — MUST mirror server/src/lib/plans.js
 // exactly. This copy only drives what the UI displays; the server copy is
 // what's actually enforced when a receipt is verified.
+// Single-merchant deployment: the free plan's quota is set high enough
+// that it never realistically caps out, so the app stays free to use —
+// the paid tiers below are unused but left in place in case that changes.
 export const PLANS = [
-  { id: 'free', quota: 10, price: 0, priceY: 0, accent: '#8A7A8C' },
+  { id: 'free', quota: 100000, price: 0, priceY: 0, accent: '#8A7A8C' },
   { id: 'starter', quota: 150, price: 29, priceY: 290, accent: '#7A3F63' },
   { id: 'growth', quota: 750, price: 75, priceY: 750, accent: '#B68A4E', popular: true },
   { id: 'business', quota: 2500, price: 150, priceY: 1500, accent: '#3F8F63' },

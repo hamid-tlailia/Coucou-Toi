@@ -63,24 +63,131 @@ gets updated, unchanged from before.
 - `mobile/src/screens/SmartOrdersScreen.js` — the review UI, with an
   editable form per draft and a confidence badge from the AI.
 
-**Setup required before this receives real messages:**
-1. Create a Meta App (developers.facebook.com) with WhatsApp, Messenger and
-   Instagram products, and a TikTok developer app for its messaging API.
-2. Fill in `GEMINI_API_KEY`, `GROQ_API_KEY`, `META_APP_SECRET`, and the
-   three `*_VERIFY_TOKEN` values in `server/.env` (see `.env.example`).
-3. Point each platform's webhook subscription at
-   `https://your-domain.com/webhooks/whatsapp` (and `/instagram`,
-   `/messenger`, `/tiktok`), using the matching verify token.
-4. For each merchant, insert a `ChannelAccount` row linking their
-   WhatsApp `phone_number_id` / Facebook page id / Instagram business
-   account id / TikTok account id to their `userId`, with the
-   per-channel access token needed to download voice notes and photos —
-   there's no admin UI for this yet, it's a one-time setup step per
-   merchant onboarding.
-5. TikTok's messaging API payload shape isn't finalized against real
-   TikTok docs here — the `POST /webhooks/tiktok` handler in
-   `webhooks.js` will need adjusting to whatever TikTok's actual webhook
-   body looks like once you have API access.
+**Setup required before this receives real messages** — see the full
+step-by-step guide below: *"الحصول على مفاتيح كل منصة وربط الحسابات"*.
+In short: get a Gemini key, a Groq key, a Meta App (WhatsApp + Messenger +
+Instagram), and optionally a TikTok developer app; fill `server/.env`;
+point each platform's webhook at `https://your-domain.com/webhooks/<channel>`;
+then run `npm run link-channels` once to connect them to your account.
+
+This deployment is sized for a **single merchant** — the free plan's quota
+was bumped to effectively unlimited (`mobile/src/config.js` and
+`server/src/lib/plans.js`, both `free.quota`), so nothing here ever needs
+a paid plan. The subscription/IAP code (Apple/Google) is left in place
+unused, in case this ever needs to support more than one merchant.
+
+---
+
+## الحصول على مفاتيح كل منصة وربط الحسابات
+
+دليل تفصيلي لكل مفتاح/توكن مطلوب في `server/.env`، وكيفية ربط حساباتك
+بالتطبيق في النهاية. كل الخطوات هنا مجانية بالكامل.
+
+### 1. مفتاح Gemini (استخراج بيانات الطلب من الرسالة)
+1. افتح https://aistudio.google.com/apikey وسجّل الدخول بحساب Google.
+2. اضغط **Create API key**، واختر مشروع Google Cloud موجود أو دع Google
+   ينشئ لك واحداً تلقائياً.
+3. انسخ المفتاح وضعه في `GEMINI_API_KEY` داخل `server/.env`.
+4. الحصة المجانية لـ Gemini 1.5 Flash كافية جداً لمتجر واحد بحجم استخدام عادي.
+
+### 2. مفتاح Groq (تفريغ الرسائل الصوتية بالعربية)
+1. افتح https://console.groq.com/keys وسجّل حساباً مجانياً.
+2. اضغط **Create API Key** وانسخه إلى `GROQ_API_KEY`.
+3. لا حاجة لبطاقة دفع؛ الحصة المجانية تكفي شخصاً واحداً.
+
+### 3. واتساب (WhatsApp Cloud API)
+1. أنشئ حساب Meta Business على https://business.facebook.com إن لم يكن لديك واحد.
+2. اذهب إلى https://developers.facebook.com/apps → **Create App** → اختر
+   نوع **Business**، وأعطه اسماً (مثلاً "Coco Love Bot").
+3. من لوحة التطبيق، أضف منتج **WhatsApp**.
+4. في صفحة إعداد واتساب ستجد رقم اختبار مجاني جاهز فوراً للتجربة (Test
+   number)، أو يمكنك لاحقاً ربط رقم هاتف حقيقي (**Add phone number**) عبر
+   التحقق برمز SMS.
+5. انسخ **Phone number ID** الظاهر في نفس الصفحة → هذا هو
+   `WHATSAPP_PHONE_NUMBER_ID`.
+6. للحصول على توكن دائم (لا ينتهي كل 24 ساعة كالتوكن المؤقت الافتراضي):
+   Meta Business Settings → **Users → System Users** → أنشئ System User
+   جديد بدور Admin → من **Add Assets** أعطه صلاحية على تطبيقك → **Generate
+   New Token** → اختر التطبيق وفعّل صلاحيتي
+   `whatsapp_business_messaging` و`whatsapp_business_management` → انسخ
+   التوكن الناتج إلى `WHATSAPP_ACCESS_TOKEN`.
+7. من صفحة إعداد واتساب في developers.facebook.com → **Configuration →
+   Webhook** → أدخل الرابط `https://your-domain.com/webhooks/whatsapp`
+   وفي خانة **Verify token** أدخل نفس القيمة التي وضعتها في
+   `WHATSAPP_VERIFY_TOKEN`، ثم اشترك في حقل **messages**.
+8. من **App Settings → Basic**، اضغط **Show** أمام **App Secret** وانسخه
+   إلى `META_APP_SECRET` (يُستخدم للتحقق من توقيع كل الويبهوكس القادمة من
+   Meta: واتساب وانستغرام وماسنجر).
+
+### 4. انستغرام (Instagram DM)
+1. تأكد أن حسابك على انستغرام من نوع **حساب أعمال/مبدع (Professional
+   account)**: من التطبيق على الهاتف → الإعدادات → نوع الحساب.
+2. اربط الحساب بصفحة فيسبوك: من إعدادات صفحة فيسبوك → **Linked Accounts →
+   Instagram** → اربط حسابك.
+3. في نفس تطبيق Meta الذي أنشأته لواتساب، أضف منتج **Instagram**
+   (Instagram Graph API / Messaging).
+4. للحصول على `INSTAGRAM_PAGE_ID`: افتح **Graph API Explorer**
+   (developers.facebook.com/tools/explorer) → اختر تطبيقك وحسابك → نفّذ
+   `GET /me/accounts` للحصول على معرف صفحتك، ثم
+   `GET /{page-id}?fields=instagram_business_account` للحصول على معرف
+   حساب انستغرام المرتبط — هذا هو `INSTAGRAM_PAGE_ID`.
+5. لـ `INSTAGRAM_ACCESS_TOKEN`: استخدم Page Access Token طويل الأمد لنفس
+   الصفحة (يمكن توليده من System User كما في خطوة واتساب، بصلاحية
+   `instagram_manage_messages` و`pages_show_list`).
+6. Webhook: نفس الخطوات، الرابط `https://your-domain.com/webhooks/instagram`،
+   Verify token = `INSTAGRAM_VERIFY_TOKEN`، اشترك في حقل **messages**.
+7. بما أنك مالك التطبيق (Admin/Developer على تطبيق Meta)، يمكنك تجربته
+   على حسابك الشخصي مباشرة دون انتظار مراجعة Meta (App Review) — المراجعة
+   تلزم فقط إذا أردت لاحقاً تشغيله على حسابات عملاء آخرين غير أعضاء التطبيق.
+
+### 5. ماسنجر (Facebook Messenger)
+1. من نفس تطبيق Meta، أضف منتج **Messenger**.
+2. في **Messenger API Settings**، اختر صفحتك من القائمة ثم اضغط
+   **Generate Token** → هذا هو `MESSENGER_ACCESS_TOKEN`.
+3. معرف الصفحة (`MESSENGER_PAGE_ID`) يظهر بجانب اسمها في نفس الصفحة، أو
+   عبر `GET /me?fields=id` في Graph API Explorer.
+4. Webhook: الرابط `https://your-domain.com/webhooks/messenger`، Verify
+   token = `MESSENGER_VERIFY_TOKEN`، اشترك في حقل **messages**.
+
+### 6. تيك توك (الأصعب نسبياً)
+1. سجّل حساب مطوّر على https://developers.tiktok.com وأنشئ تطبيقاً جديداً.
+2. اطلب الوصول إلى منتج المراسلة الخاص بتيك توك (يقع عادة تحت "TikTok for
+   Business" أو برامج شراكة محددة) — على عكس Meta، الوصول لهذا المنتج
+   ضيّق وغالباً يتطلب موافقة يدوية من تيك توك وقد يستغرق وقتاً، وربما
+   يستلزم أن يكون حسابك التجاري معتمداً لديهم.
+3. بعد القبول ستحصل على **Client Key** و**Client Secret** → ضعهما في
+   `TIKTOK_CLIENT_KEY` و`TIKTOK_CLIENT_SECRET`.
+4. معرف الحساب والتوكن (`TIKTOK_ACCOUNT_ID` / `TIKTOK_ACCESS_TOKEN`)
+   يُنشآن عادة عبر تدفق OAuth (رابط تفويض يعيد توجيهك مع `code` تستبدله
+   بتوكن) — شكل هذا التدفق يختلف حسب نوع الموافقة الممنوحة لحسابك، لذا لم
+   يُؤتمت بالكامل هنا. اتركه فارغاً وفعّل بقية المنصات أولاً؛ عند حصولك
+   على القبول من تيك توك، شارك التوثيق الفعلي المعطى لحسابك وسيتم ضبط
+   `webhooks.js` وفقه بدقة.
+
+### 7. ربط الحسابات بحسابك في التطبيق (خطوة أخيرة تجمع كل ما سبق)
+1. افتح التطبيق (Expo) وسجّل حساباً (Sign up) بنفس البريد الذي ستضعه في
+   `MERCHANT_EMAIL`.
+2. عبّئ كل القيم أعلاه في `server/.env` (المعرفات + التوكنات لكل منصة
+   استخدمتها فقط — لا حاجة لتعبئة الجميع).
+3. من داخل مجلد `server` نفّذ:
+   ```bash
+   npm run link-channels
+   ```
+4. سيطبع لك سطراً لكل منصة رُبطت بنجاح. من هذه اللحظة، أي رسالة تصل لهذا
+   الرقم/الصفحة/الحساب تُنسب تلقائياً لك، وتظهر مسودتها في تبويب "البائع
+   الذكي" داخل التطبيق.
+5. يمكنك إعادة تشغيل الأمر في أي وقت — مثلاً بعد تجديد توكن منتهي — فهو
+   يحدّث السجل الموجود بدل تكراره.
+
+### ملاحظات عامة
+- السيرفر يحتاج رابط **HTTPS عام** يصل إليه Meta/TikTok فعلياً — لا يعمل
+  مع `localhost`. للتجربة السريعة استخدم `ngrok http 8080` واستعمل الرابط
+  الذي يعطيك إياه في كل حقول الـ Webhook أعلاه، أو انشر السيرفر على منصة
+  مجانية/رخيصة مثل Render أو Railway أو Fly.io.
+- توكن واتساب المؤقت (الذي يظهر افتراضياً أثناء التطوير) ينتهي كل 24
+  ساعة — تجاهله بعد الحصول على التوكن الدائم عبر System User في الخطوة 6.
+- لا حاجة لأي اشتراك مدفوع في Meta أو Google أو Groq لحساب تجاري واحد
+  بحجم استخدام معتدل — كل ما سبق مجاني.
 
 ## Before this goes to a real customer
 

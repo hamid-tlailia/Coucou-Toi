@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node src/index.js",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:generate": "prisma generate"
+    "prisma:generate": "prisma generate",
+    "link-channels": "node scripts/linkChannels.js"
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",
