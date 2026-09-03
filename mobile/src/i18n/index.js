@@ -1,0 +1,148 @@
+import { I18nManager } from 'react-native';
+import * as Localization from 'expo-localization';
+
+export const STRINGS = {
+  ar: {
+    dir:'rtl',
+    appName:'إدارة الطلبات', tabOrders:'الطلبات', tabScan:'المسح', tabStats:'الإحصائيات', tabProfile:'حسابي',
+    totalSales:'إجمالي المبيعات', newOrders:'طلبات جديدة', unpaidCount:'غير مدفوعة', currency:'ر.س', all:'الكل',
+    st_new:'جديد', st_processing:'قيد التجهيز', st_shipped:'تم الشحن', st_delivered:'تم التسليم',
+    pay_paid:'مدفوع', pay_unpaid:'غير مدفوع', pay_cod:'الدفع عند الاستلام',
+    src_whatsapp:'واتساب', src_instagram:'انستغرام', src_facebook:'فيسبوك', src_tiktok:'تيك توك', src_manual:'يدوي',
+    searchPlaceholder:'ابحث بالكود أو الاسم أو رقم الطلب', addOrder:'إضافة طلب جديد', source:'مصدر الطلب', customer:'اسم العميل', phone:'رقم الواتساب',
+    city:'المدينة / الحي', products:'المنتجات', amount:'المبلغ الإجمالي', payStatus:'حالة الدفع',
+    save:'حفظ وتوليد الإيصال', cancel:'إلغاء', required:'يرجى تعبئة الحقول الأساسية',
+    receipt:'الإيصال', whatsapp:'واتساب', copyCode:'نسخ الكود', copied:'تم نسخ الكود',
+    orderNo:'رقم الطلب', address:'العنوان', trackingCode:'كود التتبع',
+    printPdf:'مشاركة الإيصال PDF', sendWa:'إرسال عبر واتساب', close:'إغلاق',
+    scanTitle:'فحص كود التوصيل', scanHint:'وجّه الكاميرا نحو باركود الإيصال',
+    manualCode:'أو أدخل كود التتبع يدوياً', scanBtn:'فحص الكود',
+    notFound:'لم يتم العثور على طلب مطابق', markPaid:'تحديد كمدفوع الآن',
+    confirmDelivery:'تأكيد التسليم', scanResult:'نتيجة الفحص', noOrders:'لا توجد طلبات',
+    bySource:'الطلبات حسب المصدر', byStatus:'الطلبات حسب الحالة', revenue:'الإيرادات',
+    avgOrder:'متوسط الطلب', collected:'المحصّل', pending:'المعلّق',
+    welcome:'أهلاً بك', authSub:'سجّل الدخول لإدارة طلبات متجرك',
+    signIn:'تسجيل الدخول', signUp:'إنشاء حساب',
+    continueGoogle:'المتابعة عبر Google', continueApple:'المتابعة عبر Apple', orEmail:'أو عبر البريد الإلكتروني',
+    email:'البريد الإلكتروني', password:'كلمة المرور', fullName:'الاسم الكامل', storeName:'اسم المتجر',
+    haveAccount:'لديك حساب؟ سجّل الدخول', noAccount:'ليس لديك حساب؟ أنشئ واحداً',
+    badEmail:'بريد إلكتروني غير صالح', badPass:'كلمة المرور ٨ أحرف على الأقل',
+    profile:'الملف الشخصي', currentPlan:'الخطة الحالية', usage:'الاستهلاك هذا الشهر',
+    ordersUsed:'طلب من', upgrade:'ترقية الخطة', manage:'إدارة الاشتراك', logout:'تسجيل الخروج',
+    settings:'الإعدادات', resetsOn:'تتجدد الحصة في', language:'اللغة', theme:'المظهر',
+    light:'فاتح', dark:'داكن',
+    plans:'الخطط والأسعار', monthly:'شهري', yearly:'سنوي', popular:'الأكثر اختياراً',
+    p_free:'مجاني', p_starter:'البداية', p_growth:'النمو', p_business:'الأعمال',
+    ordersMo:'طلب شهرياً', choosePlan:'اشترك الآن', currentBadge:'خطتك الحالية',
+    payment:'الدفع', processing:'جارٍ المعالجة…', paySuccess:'تم تفعيل خطتك', restore:'استعادة المشتريات', restored:'تمت الاستعادة',
+    limitTitle:'بلغت حد خطتك', limitBody:'استهلكت كل طلبات هذا الشهر. رقّ خطتك للمتابعة.',
+    seePlans:'عرض الخطط', later:'لاحقاً',
+    feat_all:'كل المنصات الأربع', feat_pdf:'إيصالات PDF بباركود', feat_scan:'فحص الدفع بالمسح',
+    feat_stats:'تقارير وإحصائيات', feat_multi:'عدة مستخدمين', feat_api:'وصول API وويبهوك',
+    feat_support:'دعم ذو أولوية', feat_brand:'شعارك على الإيصال',
+    iapNote:'تتم إدارة الاشتراك عبر App Store، ويمكن إلغاؤه من إعدادات جهازك.',
+    error:'حدث خطأ، حاول مرة أخرى', cameraDenied:'لم يُسمح باستخدام الكاميرا',
+  },
+  en: {
+    dir:'ltr',
+    appName:'Order Manager', tabOrders:'Orders', tabScan:'Scan', tabStats:'Stats', tabProfile:'Account',
+    totalSales:'Total sales', newOrders:'New orders', unpaidCount:'Unpaid', currency:'SAR', all:'All',
+    st_new:'New', st_processing:'Preparing', st_shipped:'Shipped', st_delivered:'Delivered',
+    pay_paid:'Paid', pay_unpaid:'Unpaid', pay_cod:'Cash on delivery',
+    src_whatsapp:'WhatsApp', src_instagram:'Instagram', src_facebook:'Facebook', src_tiktok:'TikTok', src_manual:'Manual',
+    searchPlaceholder:'Search by code, name, or order number', addOrder:'New order', source:'Order source', customer:'Customer name', phone:'WhatsApp number',
+    city:'City / District', products:'Products', amount:'Total amount', payStatus:'Payment status',
+    save:'Save and create receipt', cancel:'Cancel', required:'Please fill the required fields',
+    receipt:'Receipt', whatsapp:'WhatsApp', copyCode:'Copy code', copied:'Code copied',
+    orderNo:'Order no.', address:'Address', trackingCode:'Tracking code',
+    printPdf:'Share receipt PDF', sendWa:'Send on WhatsApp', close:'Close',
+    scanTitle:'Scan delivery code', scanHint:'Point the camera at the receipt barcode',
+    manualCode:'Or enter the tracking code', scanBtn:'Check code',
+    notFound:'No matching order found', markPaid:'Mark as paid',
+    confirmDelivery:'Confirm delivery', scanResult:'Scan result', noOrders:'No orders',
+    bySource:'Orders by source', byStatus:'Orders by status', revenue:'Revenue',
+    avgOrder:'Average order', collected:'Collected', pending:'Pending',
+    welcome:'Welcome', authSub:'Sign in to manage your store orders',
+    signIn:'Sign in', signUp:'Create account',
+    continueGoogle:'Continue with Google', continueApple:'Continue with Apple', orEmail:'or with email',
+    email:'Email', password:'Password', fullName:'Full name', storeName:'Store name',
+    haveAccount:'Have an account? Sign in', noAccount:'No account? Create one',
+    badEmail:'Invalid email address', badPass:'Password must be 8+ characters',
+    profile:'Profile', currentPlan:'Current plan', usage:'Usage this month',
+    ordersUsed:'orders of', upgrade:'Upgrade plan', manage:'Manage subscription', logout:'Sign out',
+    settings:'Settings', resetsOn:'Quota resets on', language:'Language', theme:'Theme',
+    light:'Light', dark:'Dark',
+    plans:'Plans and pricing', monthly:'Monthly', yearly:'Yearly', popular:'Most popular',
+    p_free:'Free', p_starter:'Starter', p_growth:'Growth', p_business:'Business',
+    ordersMo:'orders/month', choosePlan:'Subscribe', currentBadge:'Your plan',
+    payment:'Checkout', processing:'Processing…', paySuccess:'Your plan is active', restore:'Restore purchases', restored:'Purchases restored',
+    limitTitle:'Plan limit reached', limitBody:"You've used all your orders this month. Upgrade to keep going.",
+    seePlans:'See plans', later:'Later',
+    feat_all:'All four platforms', feat_pdf:'PDF receipts with barcode', feat_scan:'Payment check by scan',
+    feat_stats:'Reports and stats', feat_multi:'Multiple users', feat_api:'API and webhooks',
+    feat_support:'Priority support', feat_brand:'Your logo on receipts',
+    iapNote:'Subscriptions are managed by the App Store and can be cancelled in your device settings.',
+    error:'Something went wrong, please try again', cameraDenied:'Camera permission denied',
+  },
+  fr: {
+    dir:'ltr',
+    appName:'Gestion des commandes', tabOrders:'Commandes', tabScan:'Scanner', tabStats:'Stats', tabProfile:'Compte',
+    totalSales:'Ventes', newOrders:'Nouvelles', unpaidCount:'Impayées', currency:'SAR', all:'Toutes',
+    st_new:'Nouvelle', st_processing:'En préparation', st_shipped:'Expédiée', st_delivered:'Livrée',
+    pay_paid:'Payée', pay_unpaid:'Impayée', pay_cod:'À la livraison',
+    src_whatsapp:'WhatsApp', src_instagram:'Instagram', src_facebook:'Facebook', src_tiktok:'TikTok', src_manual:'Manuel',
+    searchPlaceholder:'Rechercher par code, nom ou numéro', addOrder:'Nouvelle commande', source:'Source', customer:'Nom du client', phone:'Numéro WhatsApp',
+    city:'Ville', products:'Produits', amount:'Montant total', payStatus:'Statut de paiement',
+    save:'Enregistrer', cancel:'Annuler', required:'Champs obligatoires manquants',
+    receipt:'Reçu', whatsapp:'WhatsApp', copyCode:'Copier', copied:'Code copié',
+    orderNo:'N° commande', address:'Adresse', trackingCode:'Code de suivi',
+    printPdf:'Partager le reçu PDF', sendWa:'Envoyer via WhatsApp', close:'Fermer',
+    scanTitle:'Scanner le code', scanHint:'Dirigez la caméra vers le code',
+    manualCode:'Ou saisissez le code', scanBtn:'Vérifier',
+    notFound:'Aucune commande trouvée', markPaid:'Marquer payée',
+    confirmDelivery:'Confirmer la livraison', scanResult:'Résultat', noOrders:'Aucune commande',
+    bySource:'Par source', byStatus:'Par statut', revenue:'Revenus',
+    avgOrder:'Panier moyen', collected:'Encaissé', pending:'En attente',
+    welcome:'Bienvenue', authSub:'Connectez-vous pour gérer vos commandes',
+    signIn:'Se connecter', signUp:'Créer un compte',
+    continueGoogle:'Continuer avec Google', continueApple:'Continuer avec Apple', orEmail:'ou par e-mail',
+    email:'E-mail', password:'Mot de passe', fullName:'Nom complet', storeName:'Nom de la boutique',
+    haveAccount:'Déjà un compte ?', noAccount:'Pas de compte ?',
+    badEmail:'E-mail invalide', badPass:'8 caractères minimum',
+    profile:'Profil', currentPlan:'Formule actuelle', usage:'Utilisation ce mois',
+    ordersUsed:'commandes sur', upgrade:'Améliorer', manage:"Gérer l'abonnement", logout:'Déconnexion',
+    settings:'Réglages', resetsOn:'Renouvellement le', language:'Langue', theme:'Thème',
+    light:'Clair', dark:'Sombre',
+    plans:'Formules', monthly:'Mensuel', yearly:'Annuel', popular:'Le plus choisi',
+    p_free:'Gratuit', p_starter:'Démarrage', p_growth:'Croissance', p_business:'Business',
+    ordersMo:'commandes/mois', choosePlan:"S'abonner", currentBadge:'Formule actuelle',
+    payment:'Paiement', processing:'Traitement…', paySuccess:'Formule activée', restore:'Restaurer les achats', restored:'Achats restaurés',
+    limitTitle:'Limite atteinte', limitBody:'Vous avez utilisé toutes vos commandes ce mois-ci.',
+    seePlans:'Voir les formules', later:'Plus tard',
+    feat_all:'Les 4 plateformes', feat_pdf:'Reçus PDF avec code', feat_scan:'Vérification par scan',
+    feat_stats:'Rapports et stats', feat_multi:'Plusieurs utilisateurs', feat_api:'API et webhooks',
+    feat_support:'Support prioritaire', feat_brand:'Votre logo sur le reçu',
+    iapNote:"L'abonnement est géré par l'App Store et peut être annulé dans vos réglages.",
+    error:'Une erreur est survenue', cameraDenied:'Accès caméra refusé',
+  },
+};
+
+export function deviceLang() {
+  const code = Localization.getLocales?.()[0]?.languageCode || 'ar';
+  return STRINGS[code] ? code : 'ar';
+}
+
+/**
+ * RTL note: flipping I18nManager requires a full app reload to take effect.
+ * We therefore lay out with flexDirection:'row' + writingDirection and only
+ * force RTL once, at first launch, to avoid a jarring mid-session restart.
+ */
+export function applyRTL(lang) {
+  const rtl = STRINGS[lang].dir === 'rtl';
+  if (I18nManager.isRTL !== rtl) {
+    I18nManager.allowRTL(rtl);
+    I18nManager.forceRTL(rtl);
+    return true; // caller should prompt for restart
+  }
+  return false;
+}
