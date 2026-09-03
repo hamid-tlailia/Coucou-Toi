@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "كوكو لوف — إدارة الطلبات",
+    "slug": "cocolove-orders",
+    "scheme": "cocolove",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.cocolove.orders",
+      "usesAppleSignIn": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "نستخدم الكاميرا لمسح باركود الإيصال والتحقق من حالة الدفع عند التسليم.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.cocolove.orders",
+      "permissions": ["CAMERA"]
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-apple-authentication",
+      ["expo-camera", { "cameraPermission": "للسماح بمسح باركود الإيصالات." }]
+    ]
+  }
+}
