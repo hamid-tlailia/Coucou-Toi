@@ -1,17 +1,13 @@
 const express = require('express');
-const crypto = require('crypto');
 const { z } = require('zod');
 const { prisma } = require('../lib/db');
 const { requireAuth } = require('../middleware/auth');
 const { validate } = require('../middleware/validate');
 const { withQuota } = require('../middleware/quota');
+const { trackingCode } = require('../lib/tracking');
 
 const router = express.Router();
 router.use(requireAuth);
-
-function trackingCode(id) {
-  return `${id}-${crypto.randomInt(1000, 9999)}`;
-}
 
 /* ---------------- list + search ----------------
  * ?q= matches, in order of intent:
@@ -126,3 +122,4 @@ function serialize(o) {
 }
 
 module.exports = router;
+module.exports.serialize = serialize;

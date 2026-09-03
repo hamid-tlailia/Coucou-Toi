@@ -8,6 +8,8 @@ const authRoutes = require('./routes/auth');
 const orderRoutes = require('./routes/orders');
 const meRoutes = require('./routes/me');
 const billingRoutes = require('./routes/billing');
+const webhookRoutes = require('./routes/webhooks');
+const pendingOrderRoutes = require('./routes/pendingOrders');
 
 const app = express();
 
@@ -16,7 +18,10 @@ const app = express();
 app.set('trust proxy', 1);
 
 app.use(helmet());
-app.use(express.json({ limit: '256kb' })); // small cap — this API never needs large bodies
+app.use(express.json({
+  limit: '2mb', // webhook payloads with base64-ish media metadata run larger than plain order JSON
+  verify: (req, res, buf) => { req.rawBody = buf; }, // needed to check Meta's X-Hub-Signature-256 on /webhooks/*
+}));
 
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean);
 app.use(cors({
@@ -35,8 +40,10 @@ app.get('/health', (req, res) => res.json({ ok: true }));
 
 app.use('/auth', authRoutes);
 app.use('/orders', orderRoutes);
+app.use('/pending-orders', pendingOrderRoutes);
 app.use('/me', meRoutes);
 app.use('/billing', billingRoutes);
+app.use('/webhooks', webhookRoutes); // public — Meta/TikTok call these directly, auth is per-provider signature/token
 
 // Centralized error handler — never leak stack traces or internals to the client.
 app.use((err, req, res, next) => {

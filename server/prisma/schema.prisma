@@ -46,6 +46,12 @@ enum OrderSource {
   manual
 }
 
+enum PendingOrderStatus {
+  pending
+  approved
+  rejected
+}
+
 model User {
   id            String        @id @default(uuid())
   email         String        @unique
@@ -60,11 +66,58 @@ model User {
   quotaResetAt  DateTime      @default(now())
   createdAt     DateTime      @default(now())
 
-  orders        Order[]
-  refreshTokens RefreshToken[]
-  subscriptions Subscription[]
+  orders          Order[]
+  refreshTokens   RefreshToken[]
+  subscriptions   Subscription[]
+  channelAccounts ChannelAccount[]
+  pendingOrders   PendingOrder[]
 
   @@index([providerSub])
+}
+
+// Links a merchant to the numbers/pages/accounts their customers message on
+// (WhatsApp phone_number_id, Instagram/Facebook page id, TikTok app user id).
+// Incoming webhooks are matched against this table to know which merchant
+// a message belongs to.
+model ChannelAccount {
+  id          String      @id @default(uuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel     OrderSource
+  externalId  String      // e.g. WhatsApp phone_number_id, FB/IG page id, TikTok open id
+  accessToken String?     // per-channel token used to fetch media (voice notes / images)
+  createdAt   DateTime    @default(now())
+
+  @@unique([channel, externalId])
+  @@index([userId])
+}
+
+// A draft order the AI pipeline extracted from an incoming social message,
+// waiting for the merchant to review and approve it in the app. Approving
+// one creates a real Order (with its own tracking code/barcode); rejecting
+// one just closes it out — neither ever touches the merchant's quota until
+// approved.
+model PendingOrder {
+  id              String             @id @default(cuid())
+  userId          String
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  source          OrderSource
+  customer        String?
+  phone           String?
+  city            String?
+  address         String?
+  items           String?
+  total           Decimal?           @db.Decimal(10, 3)
+  pay             PayStatus?
+  rawText         String?            // original message text / voice transcript, shown to the admin for review
+  mediaUrl        String?            // voice note or image the extraction was based on
+  confidence      Float?             // AI extraction confidence, 0-1 — surfaced in the app so low-confidence drafts get a closer look
+  status          PendingOrderStatus @default(pending)
+  approvedOrderId String?            @unique
+  createdAt       DateTime           @default(now())
+  reviewedAt      DateTime?
+
+  @@index([userId, status])
 }
 
 model RefreshToken {

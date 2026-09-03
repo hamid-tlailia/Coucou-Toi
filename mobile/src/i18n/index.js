@@ -42,6 +42,11 @@ export const STRINGS = {
     feat_support:'دعم ذو أولوية', feat_brand:'شعارك على الإيصال',
     iapNote:'تتم إدارة الاشتراك عبر App Store، ويمكن إلغاؤه من إعدادات جهازك.',
     error:'حدث خطأ، حاول مرة أخرى', cameraDenied:'لم يُسمح باستخدام الكاميرا',
+    tabSmart:'البائع الذكي',
+    smartTitle:'طلبات مقترحة من الذكاء الاصطناعي', smartHint:'استخرجها الذكاء الاصطناعي من رسائل العملاء — راجعها ثم وافق عليها',
+    smartEmpty:'لا توجد طلبات مقترحة حالياً', rawMessage:'الرسالة الأصلية', confidence:'نسبة الثقة',
+    reviewEdit:'مراجعة وتعديل', approveOrder:'موافقة وإنشاء الطلب', rejectOrder:'رفض',
+    approvedToast:'تم إنشاء الطلب بنجاح', rejectedToast:'تم رفض الطلب', missingFields:'يرجى تعبئة الاسم والهاتف والمبلغ',
   },
   en: {
     dir:'ltr',
@@ -83,6 +88,11 @@ export const STRINGS = {
     feat_support:'Priority support', feat_brand:'Your logo on receipts',
     iapNote:'Subscriptions are managed by the App Store and can be cancelled in your device settings.',
     error:'Something went wrong, please try again', cameraDenied:'Camera permission denied',
+    tabSmart:'Smart Seller',
+    smartTitle:'AI-suggested orders', smartHint:'Extracted by AI from customer messages — review, then approve',
+    smartEmpty:'No suggested orders right now', rawMessage:'Original message', confidence:'Confidence',
+    reviewEdit:'Review & edit', approveOrder:'Approve & create order', rejectOrder:'Reject',
+    approvedToast:'Order created', rejectedToast:'Order rejected', missingFields:'Please fill in name, phone and amount',
   },
   fr: {
     dir:'ltr',
@@ -124,6 +134,11 @@ export const STRINGS = {
     feat_support:'Support prioritaire', feat_brand:'Votre logo sur le reçu',
     iapNote:"L'abonnement est géré par l'App Store et peut être annulé dans vos réglages.",
     error:'Une erreur est survenue', cameraDenied:'Accès caméra refusé',
+    tabSmart:'Vendeur IA',
+    smartTitle:'Commandes suggérées par l\'IA', smartHint:'Extraites des messages clients par l\'IA — vérifiez puis approuvez',
+    smartEmpty:'Aucune commande suggérée', rawMessage:'Message original', confidence:'Confiance',
+    reviewEdit:'Vérifier et modifier', approveOrder:'Approuver et créer la commande', rejectOrder:'Rejeter',
+    approvedToast:'Commande créée', rejectedToast:'Commande rejetée', missingFields:'Veuillez renseigner le nom, le téléphone et le montant',
   },
 };
 
