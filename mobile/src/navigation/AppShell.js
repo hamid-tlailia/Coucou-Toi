@@ -200,7 +200,7 @@ export default function AppShell() {
       )}
 
       {/* Floating tab bar */}
-      <View style={[styles.tabBar, { bottom: insets.bottom + 12, backgroundColor: mode === 'dark' ? 'rgba(30,21,35,0.97)' : 'rgba(255,255,255,0.97)', borderColor: th.border }, shadow(12)]}>
+      <View style={[styles.tabBar, { bottom: insets.bottom + 12, backgroundColor: mode === 'dark' ? '#1E1523' : '#FFFFFF', borderColor: th.border }, shadow(12)]}>
         {TABS.map((tb) => {
           const on = tab === tb.key;
           const badge = tb.key === 'smart' ? smartCount : 0;
@@ -212,7 +212,7 @@ export default function AppShell() {
                   <View style={styles.tabBadge}><Txt w="b" size={9.5} color="#FFF">{badge > 9 ? '9+' : badge}</Txt></View>
                 )}
               </View>
-              <Txt w={on ? 'b' : 'm'} size={10.5} color={on ? th.accent : th.muted} numberOfLines={1}>
+              <Txt w={on ? 'b' : 'm'} size={11} color={on ? th.accent : th.muted} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
                 {t[`tab${tb.key[0].toUpperCase()}${tb.key.slice(1)}`]}
               </Txt>
             </Press>
@@ -239,8 +239,8 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 18, paddingTop: 8, paddingBottom: 6 },
   fab: { position: 'absolute', alignSelf: 'center', borderRadius: 24 },
   fabInner: { width: 62, height: 62, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
-  tabBar: { position: 'absolute', left: 14, right: 14, flexDirection: 'row', borderRadius: 28, paddingVertical: 8, paddingHorizontal: 4, borderWidth: 1 },
-  tabItem: { flex: 1, alignItems: 'center', gap: 2 },
-  tabIcon: { width: 46, height: 32, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  tabBar: { position: 'absolute', left: 12, right: 12, flexDirection: 'row', borderRadius: 30, paddingTop: 9, paddingBottom: 8, paddingHorizontal: 6, borderWidth: 1 },
+  tabItem: { flex: 1, alignItems: 'center', gap: 4, marginHorizontal: 2 },
+  tabIcon: { width: 52, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   tabBadge: { position: 'absolute', top: -3, right: 2, minWidth: 17, height: 17, borderRadius: 9, backgroundColor: RED, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
 });

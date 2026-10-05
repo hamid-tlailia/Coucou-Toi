@@ -4,7 +4,7 @@ const ar = {
   dir: 'rtl',
   appName: 'Coco Love',
   // tabs
-  tabHome: 'الرئيسية', tabOrders: 'الطلبات', tabSmart: 'البائع الذكي', tabScan: 'المسح', tabProfile: 'الإعدادات',
+  tabHome: 'الرئيسية', tabOrders: 'الطلبات', tabSmart: 'المساعد', tabScan: 'المسح', tabProfile: 'الإعدادات',
   // common
   all: 'الكل', save: 'حفظ', cancel: 'إلغاء', close: 'إغلاق', delete: 'حذف', edit: 'تعديل', confirm: 'تأكيد',
   error: 'حدث خطأ، حاول مرة أخرى', offline: 'تعذّر الاتصال بالخادم', required: 'يرجى تعبئة الحقول الأساسية',
@@ -33,7 +33,7 @@ const ar = {
   addOrder: 'طلب جديد', editOrder: 'تعديل الطلب', source: 'مصدر الطلب', customer: 'اسم العميل', phone: 'رقم الهاتف',
   city: 'المدينة / العنوان', products: 'المنتجات', amount: 'المبلغ', payStatus: 'الدفع', status: 'حالة الطلب',
   createOrder: 'حفظ وإنشاء الفاتورة', orderNo: 'طلب', trackingCode: 'كود التتبع', copied: 'تم النسخ',
-  invoice: 'الفاتورة', sendWa: 'إرسال للعميل', call: 'اتصال', copyLink: 'نسخ رابط التتبع',
+  invoice: 'الفاتورة', sendWa: 'إرسال للعميل', call: 'اتصال', copyLink: 'رابط التتبع',
   deleteOrder: 'حذف الطلب', deleteConfirm: 'هل تريد حذف هذا الطلب نهائياً؟', deleted: 'تم حذف الطلب', updated: 'تم التحديث',
   waMsg: 'مرحباً {name} 🌸\nتم تأكيد طلبك رقم {no}\n{items}\nالمبلغ: {total}\nتابع طلبك من هنا: {link}',
   // invoice
@@ -62,7 +62,7 @@ const ar = {
 
 const en = {
   dir: 'ltr',
-  tabHome: 'Home', tabOrders: 'Orders', tabSmart: 'Smart Seller', tabScan: 'Scan', tabProfile: 'Settings',
+  tabHome: 'Home', tabOrders: 'Orders', tabSmart: 'Assistant', tabScan: 'Scan', tabProfile: 'Settings',
   all: 'All', save: 'Save', cancel: 'Cancel', close: 'Close', delete: 'Delete', edit: 'Edit', confirm: 'Confirm',
   error: 'Something went wrong', offline: 'Cannot reach the server', required: 'Please fill the required fields',
   retry: 'Retry', seeAll: 'See all', today: 'Today', days: 'days',
@@ -86,7 +86,7 @@ const en = {
   addOrder: 'New order', editOrder: 'Edit order', source: 'Source', customer: 'Customer name', phone: 'Phone',
   city: 'City / address', products: 'Products', amount: 'Amount', payStatus: 'Payment', status: 'Status',
   createOrder: 'Save & create invoice', orderNo: 'Order', trackingCode: 'Tracking code', copied: 'Copied',
-  invoice: 'Invoice', sendWa: 'Send to customer', call: 'Call', copyLink: 'Copy tracking link',
+  invoice: 'Invoice', sendWa: 'Send to customer', call: 'Call', copyLink: 'Tracking link',
   deleteOrder: 'Delete order', deleteConfirm: 'Delete this order permanently?', deleted: 'Order deleted', updated: 'Updated',
   waMsg: 'Hello {name} 🌸\nYour order {no} is confirmed\n{items}\nTotal: {total}\nTrack it here: {link}',
   sharePdf: 'Share PDF', print: 'Print', invoiceNo: 'Invoice no.', date: 'Date', billTo: 'Bill to',
@@ -110,7 +110,7 @@ const en = {
 
 const fr = {
   ...en,
-  tabHome: 'Accueil', tabOrders: 'Commandes', tabSmart: 'Vendeur IA', tabScan: 'Scanner', tabProfile: 'Réglages',
+  tabHome: 'Accueil', tabOrders: 'Commandes', tabSmart: 'Assistant', copyLink: 'Lien de suivi', tabScan: 'Scanner', tabProfile: 'Réglages',
   all: 'Tout', save: 'Enregistrer', cancel: 'Annuler', close: 'Fermer', delete: 'Supprimer', edit: 'Modifier', confirm: 'Confirmer',
   error: 'Une erreur est survenue', offline: 'Serveur injoignable', required: 'Champs obligatoires manquants',
   retry: 'Réessayer', today: "Aujourd'hui", days: 'jours',

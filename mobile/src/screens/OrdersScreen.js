@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, memo } from 'react';
-import { View, FlatList, ScrollView, RefreshControl } from 'react-native';
+import { View, FlatList, ScrollView, RefreshControl, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { usePrefs } from '../context/Prefs';
 import { Txt, Input, Chip, Press, Tag, Skeleton, Empty } from '../components/ui';
@@ -67,7 +67,7 @@ export default function OrdersScreen({ refreshKey, onOpenOrder }) {
           initialNumToRender={8}
           maxToRenderPerBatch={8}
           windowSize={9}
-          removeClippedSubviews
+          removeClippedSubviews={Platform.OS === 'android'}
           keyboardShouldPersistTaps="handled"
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchOrders(); }} tintColor={GOLD} colors={[GOLD]} />}
           ListEmptyComponent={<Empty icon="bag-handle-outline" title={t.noOrders} sub={search ? null : t.noOrdersSub} />}

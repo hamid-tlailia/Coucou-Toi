@@ -11,6 +11,10 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://REPLACE-WITH-YOUR-SERVER.onrender.com"
+      },
+      "ios": {
+        "simulator": false,
+        "resourceClass": "m-medium"
       }
     },
     "development": {
@@ -19,6 +23,18 @@
       "android": {
         "buildType": "apk"
       }
+    },
+    "production": {
+      "distribution": "store",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://REPLACE-WITH-YOUR-SERVER.onrender.com"
+      },
+      "ios": {
+        "resourceClass": "m-medium"
+      }
     }
+  },
+  "submit": {
+    "production": {}
   }
 }

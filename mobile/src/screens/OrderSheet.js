@@ -94,11 +94,15 @@ export default function OrderSheet({ order: initial, onClose, onChanged, onInvoi
 
       <Divider />
 
-      <View style={{ flexDirection: 'row', gap: 10 }}>
-        <Action icon="document-text-outline" label={t.invoice} onPress={() => onInvoice(order)} />
-        <Action icon="logo-whatsapp" label={t.sendWa} color={GREEN} onPress={() => sendWhatsApp(order, t)} />
-        <Action icon="call-outline" label={t.call} onPress={() => callCustomer(order)} />
-        <Action icon="link-outline" label={t.copyLink} onPress={copyLink} />
+      <View style={{ gap: 12 }}>
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+          <Action icon="document-text-outline" label={t.invoice} onPress={() => onInvoice(order)} />
+          <Action icon="logo-whatsapp" label={t.src_whatsapp} color={GREEN} onPress={() => sendWhatsApp(order, t)} />
+        </View>
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+          <Action icon="call-outline" label={t.call} onPress={() => callCustomer(order)} />
+          <Action icon="link-outline" label={t.copyLink} onPress={copyLink} />
+        </View>
       </View>
 
       <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
@@ -122,9 +126,11 @@ function Row({ icon, text }) {
 function Action({ icon, label, onPress, color }) {
   const { th } = usePrefs();
   return (
-    <Press onPress={onPress} style={{ flex: 1, alignItems: 'center', backgroundColor: th.surface, borderRadius: 18, paddingVertical: 13, borderWidth: 1, borderColor: th.border }}>
-      <Ionicons name={icon} size={22} color={color || th.accent} />
-      <Txt w="m" size={11} style={{ marginTop: 6, textAlign: 'center' }} numberOfLines={1}>{label}</Txt>
+    <Press onPress={onPress} style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: th.surface, borderRadius: 18, paddingVertical: 14, paddingHorizontal: 14, borderWidth: 1, borderColor: th.border }}>
+      <View style={{ width: 40, height: 40, borderRadius: 13, backgroundColor: `${color || th.accent}1F`, alignItems: 'center', justifyContent: 'center' }}>
+        <Ionicons name={icon} size={20} color={color || th.accent} />
+      </View>
+      <Txt w="b" size={14} style={{ flex: 1 }} numberOfLines={1}>{label}</Txt>
     </Press>
   );
 }

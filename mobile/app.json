@@ -15,8 +15,19 @@
       "infoPlist": {
         "NSCameraUsageDescription": "نستخدم الكاميرا لمسح باركود الإيصال والتحقق من حالة الدفع عند التسليم.",
         "NSFaceIDUsageDescription": "لقفل التطبيق بالبصمة أو بالوجه.",
-        "ITSAppUsesNonExemptEncryption": false
-      }
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleDevelopmentRegion": "ar",
+        "CFBundleLocalizations": [
+          "ar",
+          "fr",
+          "en"
+        ],
+        "CFBundleAllowMixedLocalizations": true,
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
+      },
+      "buildNumber": "1"
     },
     "android": {
       "package": "com.cocolove.orders",
