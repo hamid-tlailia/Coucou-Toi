@@ -1,15 +1,20 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, Alert } from 'react-native';
-import { Chip, Input, FieldLabel, PrimaryButton, GhostButton } from '../components/ui';
-import { PAY_KEYS, srcOf, DEEP, GREEN, RED, GOLD, shadow } from '../theme';
+import { View, FlatList, RefreshControl, ScrollView } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
+import { Ionicons } from '@expo/vector-icons';
+import { usePrefs } from '../context/Prefs';
+import { Txt, Card, Input, Chip, Button, Press, Tag, Empty, Skeleton, haptic } from '../components/ui';
+import { SOURCES, PAY_KEYS, PAY_COLORS, srcOf, GOLD, GREEN, RED } from '../theme';
 import { formatTND } from '../lib/money';
-import { listPendingOrders, approvePendingOrder, rejectPendingOrder } from '../api/pendingOrders';
+import { listPendingOrders, approvePendingOrder, rejectPendingOrder, draftFromText } from '../api/pendingOrders';
 
-export default function SmartOrdersScreen({ t, th, theme, showToast, onApproved, onCountChange, refreshKey }) {
-  const [drafts, setDrafts] = useState([]);
-  const [loading, setLoading] = useState(true);
+export default function SmartOrdersScreen({ refreshKey, onApproved, onCountChange }) {
+  const { t, th, showToast } = usePrefs();
+  const [drafts, setDrafts] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [openId, setOpenId] = useState(null);
+  const [text, setText] = useState('');
+  const [source, setSource] = useState('whatsapp');
+  const [extracting, setExtracting] = useState(false);
 
   const fetchDrafts = useCallback(async () => {
     try {
@@ -17,160 +22,163 @@ export default function SmartOrdersScreen({ t, th, theme, showToast, onApproved,
       setDrafts(data.pendingOrders || []);
       onCountChange?.((data.pendingOrders || []).length);
     } catch {
-      showToast?.(t.error);
+      setDrafts((d) => d || []);
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
   }, []);
 
   useEffect(() => { fetchDrafts(); }, [refreshKey]);
 
-  const onRefresh = () => { setRefreshing(true); fetchDrafts(); };
+  const extract = async () => {
+    if (text.trim().length < 3) return;
+    setExtracting(true);
+    try {
+      const draft = await draftFromText(text.trim(), source);
+      setDrafts((ds) => [draft, ...(ds || [])]);
+      onCountChange?.((drafts?.length || 0) + 1);
+      setText('');
+      haptic('success');
+      showToast(draft.confidence > 0 ? t.draftCreated : t.aiNoKey, draft.confidence > 0 ? 'ok' : 'info');
+    } catch (e) {
+      showToast(e.code === 'network' ? t.offline : t.error, 'error');
+    } finally {
+      setExtracting(false);
+    }
+  };
 
-  const onApprove = async (id, overrides) => {
+  const remove = (id) => setDrafts((ds) => {
+    const next = ds.filter((d) => d.id !== id);
+    onCountChange?.(next.length);
+    return next;
+  });
+
+  const approve = async (id, overrides) => {
     try {
       const { order } = await approvePendingOrder(id, overrides);
-      setDrafts((ds) => ds.filter((d) => d.id !== id));
-      onCountChange?.((c) => Math.max(0, (typeof c === 'number' ? c : 0) - 1));
-      setOpenId(null);
-      showToast?.(t.approvedToast);
+      remove(id);
+      haptic('success');
+      showToast(t.approvedToast);
       onApproved?.(order);
     } catch (e) {
-      if (e.status === 400) Alert.alert(t.missingFields);
-      else if (e.status === 402) Alert.alert(t.error);
-      else Alert.alert(t.error);
+      showToast(e.status === 400 ? t.missingFields : t.error, 'error');
     }
   };
 
-  const onReject = async (id) => {
-    try {
-      await rejectPendingOrder(id);
-      setDrafts((ds) => ds.filter((d) => d.id !== id));
-      setOpenId(null);
-      showToast?.(t.rejectedToast);
-    } catch {
-      Alert.alert(t.error);
-    }
+  const reject = async (id) => {
+    try { await rejectPendingOrder(id); remove(id); showToast(t.rejectedToast, 'info'); } catch { showToast(t.error, 'error'); }
   };
+
+  const header = (
+    <>
+      <Card style={{ marginBottom: 18 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <View style={{ width: 40, height: 40, borderRadius: 14, backgroundColor: `${GOLD}22`, alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="sparkles" size={20} color={GOLD} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Txt w="b" size={16}>{t.smartTitle}</Txt>
+            <Txt size={12.5} color={th.muted}>{t.smartHint}</Txt>
+          </View>
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 14 }}>
+          {SOURCES.filter((s) => s.key !== 'manual').map((s) => (
+            <Chip key={s.key} label={t[`src_${s.key}`]} icon={s.icon} color={s.color} active={source === s.key} onPress={() => setSource(s.key)} />
+          ))}
+        </ScrollView>
+        <Input multiline placeholder={t.pastePlaceholder} value={text} onChangeText={setText} style={{ marginTop: 12 }} />
+        <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
+          <Button small variant="ghost" icon="clipboard-outline" title={t.paste} style={{ flex: 0.4 }}
+            onPress={async () => setText(await Clipboard.getStringAsync())} />
+          <Button small icon="sparkles-outline" title={extracting ? t.extracting : t.extract} loading={extracting}
+            disabled={text.trim().length < 3} onPress={extract} style={{ flex: 0.6 }} />
+        </View>
+      </Card>
+      <Txt w="b" size={16.5} style={{ marginBottom: 12 }}>{t.drafts}{drafts?.length ? ` (${drafts.length})` : ''}</Txt>
+    </>
+  );
 
   return (
-    <View style={{ flex: 1, paddingHorizontal: 20, paddingTop: 14 }}>
-      <Text style={{ fontSize: 16, fontWeight: '700', color: th.text }}>{t.smartTitle}</Text>
-      <Text style={{ fontSize: 12, color: th.muted, marginTop: 4, marginBottom: 10 }}>{t.smartHint}</Text>
-
-      <FlatList
-        data={drafts}
-        keyExtractor={(d) => d.id}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={DEEP} />}
-        contentContainerStyle={{ paddingBottom: 110 }}
-        ListEmptyComponent={!loading && (
-          <Text style={{ textAlign: 'center', color: th.muted, marginTop: 40, fontSize: 13.5 }}>{t.smartEmpty}</Text>
-        )}
-        renderItem={({ item }) => (
-          <DraftCard
-            draft={item} t={t} th={th} theme={theme}
-            open={openId === item.id}
-            onToggle={() => setOpenId(openId === item.id ? null : item.id)}
-            onApprove={onApprove}
-            onReject={onReject}
-          />
-        )}
-      />
-    </View>
+    <FlatList
+      data={drafts || []}
+      keyExtractor={(d) => d.id}
+      contentContainerStyle={{ padding: 18, paddingBottom: 140 }}
+      keyboardShouldPersistTaps="handled"
+      ListHeaderComponent={header}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchDrafts(); }} tintColor={GOLD} colors={[GOLD]} />}
+      ListEmptyComponent={drafts === null
+        ? <View style={{ gap: 12 }}><Skeleton h={130} r={22} /><Skeleton h={130} r={22} /></View>
+        : <Empty icon="chatbubbles-outline" title={t.smartEmpty} />}
+      renderItem={({ item }) => <DraftCard draft={item} onApprove={approve} onReject={reject} />}
+    />
   );
 }
 
-function DraftCard({ draft, t, th, theme, open, onToggle, onApprove, onReject }) {
+function DraftCard({ draft, onApprove, onReject }) {
+  const { t, th } = usePrefs();
   const src = srcOf(draft.source);
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [f, setF] = useState({
-    customer: draft.customer || '', phone: draft.phone || '', city: draft.city || '',
+    customer: draft.customer || '', phone: draft.phone || '', city: [draft.city, draft.address].filter(Boolean).join(' - '),
     items: draft.items || '', total: draft.total != null ? String(draft.total) : '', pay: draft.pay || 'cod',
   });
+  const pct = Math.round((draft.confidence ?? 0) * 100);
+  const pctColor = pct >= 70 ? GREEN : pct >= 40 ? GOLD : RED;
+  const set = (k) => (v) => setF((s) => ({ ...s, [k]: v }));
 
-  const confidencePct = Math.round((draft.confidence ?? 0) * 100);
-  const confidenceColor = confidencePct >= 70 ? GREEN : confidencePct >= 40 ? GOLD : RED;
-
-  const submit = () => {
-    onApprove(draft.id, {
-      customer: f.customer, phone: f.phone, city: f.city, items: f.items,
-      total: parseFloat(String(f.total).replace(',', '.')) || 0, pay: f.pay,
-    });
+  const approve = async () => {
+    setBusy(true);
+    const total = parseFloat(String(f.total).replace(',', '.'));
+    const body = { pay: f.pay };
+    if (f.customer.trim()) body.customer = f.customer.trim();
+    if (f.phone.trim()) body.phone = f.phone.trim();
+    if (f.city.trim()) body.city = f.city.trim();
+    if (f.items.trim()) body.items = f.items.trim();
+    if (!Number.isNaN(total)) body.total = total;
+    await onApprove(draft.id, body);
+    setBusy(false);
   };
 
   return (
-    <View style={[styles.card, { backgroundColor: th.surface }, shadow(4)]}>
-      <View style={styles.row}>
-        <View style={{ flexDirection: 'row', gap: 6 }}>
-          <Tag color={src.color}>{t[`src_${draft.source}`]}</Tag>
-          <Tag color={confidenceColor}>{t.confidence}: {confidencePct}%</Tag>
-        </View>
+    <Card style={{ marginBottom: 12 }}>
+      <View style={{ flexDirection: 'row', gap: 6 }}>
+        <Tag label={t[`src_${draft.source}`]} color={src.color} icon={src.icon} />
+        <Tag label={`${t.confidence} ${pct}%`} color={pctColor} />
       </View>
-
-      <Text style={{ fontSize: 15.5, fontWeight: '700', marginTop: 10, color: th.text }}>
-        {draft.customer || '—'}
-      </Text>
-      <Text style={{ fontSize: 12.5, color: th.muted, marginVertical: 4 }}>
-        {draft.city || '—'} · {draft.items || '—'}
-      </Text>
-      {draft.total != null && (
-        <Text style={{ fontSize: 16, fontWeight: '700', color: theme === 'light' ? DEEP : '#E3C08A' }}>
-          {formatTND(draft.total)}
-        </Text>
-      )}
+      <Txt w="b" size={16} style={{ marginTop: 10 }}>{draft.customer || '—'}</Txt>
+      <Txt size={13} color={th.muted} style={{ marginTop: 2 }}>{[draft.city, draft.items].filter(Boolean).join(' · ') || '—'}</Txt>
+      {draft.total != null && <Txt w="x" size={17} color={th.accent} style={{ marginTop: 4 }}>{formatTND(draft.total)}</Txt>}
 
       {!!draft.rawText && (
-        <View style={[styles.rawBox, { backgroundColor: th.raised }]}>
-          <Text style={{ fontSize: 10.5, fontWeight: '700', color: th.muted, marginBottom: 3 }}>{t.rawMessage}</Text>
-          <Text numberOfLines={open ? undefined : 2} style={{ fontSize: 12, color: th.text }}>{draft.rawText}</Text>
+        <View style={{ backgroundColor: th.raised, borderRadius: 14, padding: 11, marginTop: 10 }}>
+          <Txt w="b" size={11} color={th.muted} style={{ marginBottom: 3 }}>{t.rawMessage}</Txt>
+          <Txt size={13} numberOfLines={open ? undefined : 2} style={{ lineHeight: 20 }}>{draft.rawText}</Txt>
         </View>
       )}
 
-      <TouchableOpacity onPress={onToggle} style={{ marginTop: 10 }}>
-        <Text style={{ fontSize: 12.5, fontWeight: '700', color: DEEP }}>
-          {open ? `▲ ${t.reviewEdit}` : `▼ ${t.reviewEdit}`}
-        </Text>
-      </TouchableOpacity>
+      <Press onPress={() => setOpen(!open)} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 10 }}>
+        <Ionicons name={open ? 'chevron-up' : 'create-outline'} size={16} color={th.accent} />
+        <Txt w="b" size={13} color={th.accent}>{t.edit}</Txt>
+      </Press>
 
       {open && (
-        <View style={{ marginTop: 4 }}>
-          <FieldLabel th={th}>{t.customer}</FieldLabel>
-          <Input th={th} value={f.customer} onChangeText={(v) => setF({ ...f, customer: v })} />
-          <FieldLabel th={th}>{t.phone}</FieldLabel>
-          <Input th={th} keyboardType="phone-pad" value={f.phone} onChangeText={(v) => setF({ ...f, phone: v })} />
-          <FieldLabel th={th}>{t.city}</FieldLabel>
-          <Input th={th} value={f.city} onChangeText={(v) => setF({ ...f, city: v })} />
-          <FieldLabel th={th}>{t.products}</FieldLabel>
-          <Input th={th} value={f.items} onChangeText={(v) => setF({ ...f, items: v })} />
-          <FieldLabel th={th}>{t.amount} (د.ت)</FieldLabel>
-          <Input th={th} keyboardType="decimal-pad" value={f.total} onChangeText={(v) => setF({ ...f, total: v })} />
-          <FieldLabel th={th}>{t.payStatus}</FieldLabel>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-            {PAY_KEYS.map((p) => (
-              <Chip key={p} th={th} label={t[`pay_${p}`]} active={f.pay === p} gradientColor={DEEP} onPress={() => setF({ ...f, pay: p })} />
-            ))}
+        <View>
+          <Input label={t.customer} value={f.customer} onChangeText={set('customer')} />
+          <Input label={t.phone} keyboardType="phone-pad" value={f.phone} onChangeText={set('phone')} />
+          <Input label={t.city} value={f.city} onChangeText={set('city')} />
+          <Input label={t.products} value={f.items} onChangeText={set('items')} />
+          <Input label={`${t.amount} (د.ت)`} keyboardType="decimal-pad" value={f.total} onChangeText={set('total')} />
+          <View style={{ flexDirection: 'row', marginTop: 12 }}>
+            {PAY_KEYS.map((p) => <Chip key={p} label={t[`pay_${p}`]} color={PAY_COLORS[p]} active={f.pay === p} onPress={() => set('pay')(p)} />)}
           </View>
         </View>
       )}
 
-      <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
-        <GhostButton th={th} title={t.rejectOrder} onPress={() => onReject(draft.id)} style={{ flex: 0.35, backgroundColor: '#FBEAE8' }} color={RED} />
-        <PrimaryButton th={th} title={t.approveOrder} onPress={submit} style={{ flex: 0.65 }} />
+      <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
+        <Button small variant="danger" icon="close" title={t.rejectOrder} onPress={() => onReject(draft.id)} style={{ flex: 0.38 }} />
+        <Button small icon="checkmark-done" title={t.approveOrder} onPress={approve} loading={busy} style={{ flex: 0.62 }} />
       </View>
-    </View>
+    </Card>
   );
 }
-
-function Tag({ children, color }) {
-  return (
-    <View style={{ backgroundColor: color, paddingHorizontal: 9, paddingVertical: 3, borderRadius: 12 }}>
-      <Text style={{ fontSize: 10.5, fontWeight: '700', color: '#FFF' }}>{children}</Text>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  card: { borderRadius: 18, padding: 16, marginBottom: 14 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  rawBox: { borderRadius: 10, padding: 9, marginTop: 10 },
-});

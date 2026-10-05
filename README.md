@@ -1,5 +1,7 @@
 # Coco Love — Order Manager
 
+> 📲 **تثبيت التطبيق على الهاتف (نسخة خاصة، بدون متاجر):** راجع [INSTALL_AR.md](INSTALL_AR.md)
+
 Full mobile app (iOS + Android, React Native / Expo) with a Node.js/Express
 backend. Currency: Tunisian dinar (TND). Search finds an order by tracking
 code / barcode, customer name, or order number.

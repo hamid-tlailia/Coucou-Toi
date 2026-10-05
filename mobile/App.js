@@ -1,69 +1,98 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { View, ActivityIndicator, AppState, Text } from 'react-native';
+import { View, AppState, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as SplashScreen from 'expo-splash-screen';
+import { useFonts, Tajawal_400Regular, Tajawal_500Medium, Tajawal_700Bold, Tajawal_800ExtraBold } from '@expo-google-fonts/tajawal';
+import { Ionicons } from '@expo/vector-icons';
 import { AuthProvider, useAuth } from './src/auth/AuthContext';
+import { PrefsProvider, usePrefs } from './src/context/Prefs';
 import AuthScreen from './src/screens/AuthScreen';
 import AppShell from './src/navigation/AppShell';
-import { STRINGS, deviceLang } from './src/i18n';
-import { THEMES, DEEP } from './src/theme';
+import { Txt, Button } from './src/components/ui';
 import { isAppLockEnabled, requireBiometricUnlock } from './src/lib/appLock';
+import { GOLD } from './src/theme';
+
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function App() {
+  const [fontsLoaded] = useFonts({ Tajawal_400Regular, Tajawal_500Medium, Tajawal_700Bold, Tajawal_800ExtraBold, ...Ionicons.font });
+
+  useEffect(() => {
+    if (fontsLoaded) SplashScreen.hideAsync().catch(() => {});
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) return null;
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <Root />
-      </AuthProvider>
+      <PrefsProvider>
+        <AuthProvider>
+          <Root />
+        </AuthProvider>
+      </PrefsProvider>
     </SafeAreaProvider>
   );
 }
 
 function Root() {
-  const { user, booting } = useAuth();
+  const { user, booting, bootError, retryBoot } = useAuth();
+  const { t } = usePrefs();
   const [locked, setLocked] = useState(false);
   const appState = useRef(AppState.currentState);
-  const lang = deviceLang();
-  const t = STRINGS[lang];
-  const th = THEMES.light;
 
   const checkLock = useCallback(async () => {
-    if (!user) return;
-    if (await isAppLockEnabled()) {
-      setLocked(true);
-      const ok = await requireBiometricUnlock(t);
-      setLocked(!ok);
-    }
+    if (!user || !(await isAppLockEnabled())) return;
+    setLocked(true);
+    setLocked(!(await requireBiometricUnlock(t)));
   }, [user]);
 
   useEffect(() => { checkLock(); }, [checkLock]);
 
-  // Re-lock whenever the app returns from the background — the standard
-  // pattern used by banking apps, so a picked-up phone doesn't leak orders.
+  // Re-lock when the app comes back from the background (banking-app style).
   useEffect(() => {
     const sub = AppState.addEventListener('change', (next) => {
-      if (appState.current.match(/inactive|background/) && next === 'active') checkLock();
+      if (appState.current === 'background' && next === 'active') checkLock();
       appState.current = next;
     });
     return () => sub.remove();
   }, [checkLock]);
 
-  if (booting) {
+  if (booting) return <Splash />;
+
+  if (bootError) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: th.bg }}>
-        <ActivityIndicator size="large" color={DEEP} />
-      </View>
+      <Center>
+        <Ionicons name="cloud-offline-outline" size={54} color={GOLD} />
+        <Txt w="b" size={17} style={{ marginTop: 14, textAlign: 'center' }}>{t.offline}</Txt>
+        <Button title={t.retry} icon="refresh" onPress={retryBoot} style={{ marginTop: 20, minWidth: 180 }} />
+      </Center>
     );
   }
 
-  if (!user) return <AuthScreen t={t} th={th} theme="light" />;
+  if (!user) return <AuthScreen />;
 
   if (locked) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: th.bg }}>
-        <Text onPress={checkLock} style={{ color: DEEP, fontWeight: '700' }}>🔒 {t.welcome}</Text>
-      </View>
+      <Center>
+        <Image source={require('./assets/icon.png')} style={{ width: 96, height: 96, borderRadius: 30 }} />
+        <Txt w="x" size={20} style={{ marginTop: 18 }}>{t.locked}</Txt>
+        <Button title={t.unlock} icon="finger-print" onPress={checkLock} style={{ marginTop: 20, minWidth: 180 }} />
+      </Center>
     );
   }
 
   return <AppShell />;
+}
+
+function Center({ children }) {
+  const { th } = usePrefs();
+  return <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 30, backgroundColor: th.bg }}>{children}</View>;
+}
+
+function Splash() {
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#120C14' }}>
+      <Image source={require('./assets/splash-icon.png')} style={{ width: 220, height: 220 }} resizeMode="contain" />
+      <ActivityIndicator color={GOLD} style={{ marginTop: 12 }} />
+    </View>
+  );
 }

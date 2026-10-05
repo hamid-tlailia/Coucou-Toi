@@ -1,70 +1,113 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, ScrollView, Switch, Image } from 'react-native';
+import Constants from 'expo-constants';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../auth/AuthContext';
-import { GhostButton } from '../components/ui';
-import { DEEP, PLUM, GOLD, RED } from '../theme';
-import { planOf as planOfCfg } from '../config';
+import { usePrefs } from '../context/Prefs';
+import { Txt, Card, Input, Button, Press, haptic } from '../components/ui';
+import { updateMe } from '../api/account';
+import { isAppLockEnabled, setAppLockEnabled, requireBiometricUnlock } from '../lib/appLock';
+import { API_URL } from '../config';
+import { GOLD, GREEN, RED } from '../theme';
 
-export default function ProfileScreen({ t, th, theme, lang, setLang, setTheme, onUpgrade }) {
-  const { user, signOut } = useAuth();
-  const plan = planOfCfg(user.plan);
-  const used = user.used ?? 0;
-  const pct = Math.min(100, (used / plan.quota) * 100);
+export default function ProfileScreen({ pushMode, onEnablePush }) {
+  const { user, setUser, signOut } = useAuth();
+  const { t, th, lang, setLang, mode, setMode, showToast } = usePrefs();
+  const [f, setF] = useState({ name: user.name || '', store: user.store || '', storePhone: user.storePhone || '', storeAddress: user.storeAddress || '' });
+  const [saving, setSaving] = useState(false);
+  const [lock, setLock] = useState(false);
+
+  useEffect(() => { isAppLockEnabled().then(setLock); }, []);
+  const set = (k) => (v) => setF((s) => ({ ...s, [k]: v }));
+  const dirty = f.name !== (user.name || '') || f.store !== (user.store || '') || f.storePhone !== (user.storePhone || '') || f.storeAddress !== (user.storeAddress || '');
+
+  const save = async () => {
+    if (!f.name.trim() || !f.store.trim()) return showToast(t.required, 'error');
+    setSaving(true);
+    try {
+      const me = await updateMe({ name: f.name.trim(), store: f.store.trim(), storePhone: f.storePhone.trim() || null, storeAddress: f.storeAddress.trim() || null });
+      setUser(me);
+      haptic('success');
+      showToast(t.saved);
+    } catch { showToast(t.error, 'error'); } finally { setSaving(false); }
+  };
+
+  const toggleLock = async (v) => {
+    if (v && !(await requireBiometricUnlock(t))) return; // prove it works before enabling
+    await setAppLockEnabled(v);
+    setLock(v);
+  };
+
+  const pushLabel = pushMode === 'push' ? t.pushOn : pushMode === 'local' ? t.pushLocal : t.pushOff;
+  const pushColor = pushMode === 'push' ? GREEN : pushMode === 'local' ? GOLD : RED;
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 100 }}>
-      <View style={{ backgroundColor: th.surface, borderRadius: 20, padding: 20, alignItems: 'center', marginBottom: 14 }}>
-        <View style={{ width: 66, height: 66, borderRadius: 33, backgroundColor: DEEP, alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-          <Text style={{ color: '#F3D9A8', fontSize: 25, fontWeight: '700' }}>{(user.name || 'U')[0].toUpperCase()}</Text>
-        </View>
-        <Text style={{ fontSize: 18, fontWeight: '700', color: th.text }}>{user.name}</Text>
-        <Text style={{ fontSize: 12.5, color: th.muted, marginTop: 3 }}>{user.email}</Text>
+    <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 140 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <View style={{ alignItems: 'center', marginBottom: 18 }}>
+        <Image source={require('../../assets/icon.png')} style={{ width: 78, height: 78, borderRadius: 26 }} />
+        <Txt w="x" size={20} style={{ marginTop: 10 }}>{user.store || user.name}</Txt>
+        <Txt size={13} color={th.muted}>{user.email}</Txt>
       </View>
 
-      <View style={{ backgroundColor: plan.id === 'free' ? th.surface : DEEP, borderRadius: 20, padding: 18, marginBottom: 14 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <View>
-            <Text style={{ fontSize: 11, color: plan.id === 'free' ? th.muted : 'rgba(255,255,255,.75)' }}>{t.currentPlan}</Text>
-            <Text style={{ fontSize: 20, fontWeight: '700', color: plan.id === 'free' ? th.text : '#FFF', marginTop: 2 }}>{t[`p_${plan.id}`]}</Text>
-          </View>
-        </View>
-        <View style={{ marginTop: 14 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-            <Text style={{ fontSize: 11.5, color: plan.id === 'free' ? th.muted : 'rgba(255,255,255,.85)' }}>{used} {t.ordersUsed} {plan.quota}</Text>
-            <Text style={{ fontSize: 11.5, color: plan.id === 'free' ? th.muted : 'rgba(255,255,255,.85)' }}>{Math.round(pct)}%</Text>
-          </View>
-          <View style={{ height: 7, borderRadius: 6, backgroundColor: plan.id === 'free' ? th.raised : 'rgba(255,255,255,.22)', overflow: 'hidden' }}>
-            <View style={{ width: `${pct}%`, height: '100%', backgroundColor: plan.id === 'free' ? PLUM : '#FFF', borderRadius: 6 }} />
-          </View>
-        </View>
-        <TouchableOpacity onPress={onUpgrade} style={{ marginTop: 14, padding: 12, borderRadius: 12, backgroundColor: plan.id === 'free' ? DEEP : '#FFF', alignItems: 'center' }}>
-          <Text style={{ fontWeight: '700', fontSize: 13, color: plan.id === 'free' ? '#FFF' : DEEP }}>
-            {plan.id === 'free' ? `⚡ ${t.upgrade}` : t.manage}
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <Card>
+        <Txt w="b" size={16}>{t.storeInfo}</Txt>
+        <Txt size={12.5} color={th.muted} style={{ marginTop: 2 }}>{t.storeInfoHint}</Txt>
+        <Input label={t.storeName} icon="storefront-outline" value={f.store} onChangeText={set('store')} />
+        <Input label={t.storePhone} icon="call-outline" keyboardType="phone-pad" value={f.storePhone} onChangeText={set('storePhone')} placeholder="+216 22 123 456" />
+        <Input label={t.storeAddress} icon="location-outline" value={f.storeAddress} onChangeText={set('storeAddress')} />
+        <Input label={t.yourName} icon="person-outline" value={f.name} onChangeText={set('name')} />
+        {dirty && <Button title={t.save} icon="checkmark" onPress={save} loading={saving} style={{ marginTop: 18 }} />}
+      </Card>
 
-      <View style={{ backgroundColor: th.surface, borderRadius: 18, padding: 16, marginBottom: 14 }}>
-        <Text style={{ fontSize: 14.5, fontWeight: '700', color: th.text, marginBottom: 12 }}>{t.settings}</Text>
-        <Text style={{ fontSize: 11.5, color: th.muted, marginBottom: 7 }}>{t.language}</Text>
-        <View style={{ flexDirection: 'row', gap: 7, marginBottom: 14 }}>
-          {[['ar', 'العربية'], ['fr', 'Français'], ['en', 'English']].map(([k, l]) => (
-            <TouchableOpacity key={k} onPress={() => setLang(k)} style={{ flex: 1, padding: 10, borderRadius: 11, backgroundColor: lang === k ? DEEP : th.raised, alignItems: 'center' }}>
-              <Text style={{ fontSize: 12, fontWeight: lang === k ? '700' : '500', color: lang === k ? '#FFF' : th.text }}>{l}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-        <Text style={{ fontSize: 11.5, color: th.muted, marginBottom: 7 }}>{t.theme}</Text>
-        <View style={{ flexDirection: 'row', gap: 7 }}>
-          {[['light', `☀️ ${t.light}`], ['dark', `🌙 ${t.dark}`]].map(([k, l]) => (
-            <TouchableOpacity key={k} onPress={() => setTheme(k)} style={{ flex: 1, padding: 10, borderRadius: 11, backgroundColor: theme === k ? GOLD : th.raised, alignItems: 'center' }}>
-              <Text style={{ fontSize: 12, fontWeight: theme === k ? '700' : '500', color: theme === k ? '#FFF' : th.text }}>{l}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
+      <Card style={{ marginTop: 14 }}>
+        <Txt w="b" size={16} style={{ marginBottom: 6 }}>{t.preferences}</Txt>
+        <Txt w="b" size={12.5} color={th.muted} style={{ marginTop: 10, marginBottom: 8 }}>{t.language}</Txt>
+        <Segmented value={lang} onChange={setLang} items={[['ar', 'العربية'], ['fr', 'Français'], ['en', 'English']]} />
+        <Txt w="b" size={12.5} color={th.muted} style={{ marginTop: 14, marginBottom: 8 }}>{t.theme}</Txt>
+        <Segmented value={mode} onChange={setMode} items={[['dark', `🌙  ${t.dark}`], ['light', `☀️  ${t.light}`]]} />
+      </Card>
 
-      <GhostButton th={th} title={t.logout} onPress={signOut} color={RED} />
+      <Card style={{ marginTop: 14 }}>
+        <Txt w="b" size={16} style={{ marginBottom: 4 }}>{t.security}</Txt>
+        <Row icon="finger-print" label={t.appLock} right={<Switch value={lock} onValueChange={toggleLock} trackColor={{ true: GOLD, false: th.raised }} thumbColor="#FFF" />} />
+        <Press onPress={pushMode !== 'push' ? onEnablePush : undefined}>
+          <Row icon="notifications-outline" label={t.pushNotif}
+            right={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: pushColor }} />
+              <Txt w="m" size={13} color={th.muted}>{pushLabel}</Txt>
+            </View>} />
+        </Press>
+        <Row icon="server-outline" label={t.server} right={<Txt size={11.5} color={th.faint} numberOfLines={1} style={{ maxWidth: 170 }}>{API_URL.replace(/^https?:\/\//, '')}</Txt>} />
+        <Row icon="information-circle-outline" label={t.version} right={<Txt size={13} color={th.faint}>{Constants.expoConfig?.version}</Txt>} last />
+      </Card>
+
+      <Button title={t.logout} icon="log-out-outline" variant="danger" onPress={signOut} style={{ marginTop: 18 }} />
     </ScrollView>
+  );
+}
+
+function Segmented({ value, onChange, items }) {
+  const { th } = usePrefs();
+  return (
+    <View style={{ flexDirection: 'row', backgroundColor: th.raised, borderRadius: 14, padding: 4 }}>
+      {items.map(([k, l]) => (
+        <Press key={k} onPress={() => onChange(k)} style={{ flex: 1, paddingVertical: 10, borderRadius: 11, alignItems: 'center', backgroundColor: value === k ? th.surface : 'transparent' }}>
+          <Txt w={value === k ? 'b' : 'm'} size={13} color={value === k ? th.accent : th.muted}>{l}</Txt>
+        </Press>
+      ))}
+    </View>
+  );
+}
+
+function Row({ icon, label, right, last }) {
+  const { th } = usePrefs();
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, borderBottomWidth: last ? 0 : 1, borderColor: th.border }}>
+      <View style={{ width: 34, height: 34, borderRadius: 11, backgroundColor: th.raised, alignItems: 'center', justifyContent: 'center' }}>
+        <Ionicons name={icon} size={18} color={th.accent} />
+      </View>
+      <Txt w="m" size={14.5} style={{ flex: 1 }}>{label}</Txt>
+      {right}
+    </View>
   );
 }

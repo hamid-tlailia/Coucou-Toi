@@ -25,11 +25,22 @@ export async function api(path, { method = 'GET', body, auth = true, idempotency
     const headers = { 'Content-Type': 'application/json' };
     if (token) headers.Authorization = `Bearer ${token}`;
     if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
-    return fetch(`${API_URL}${path}`, {
-      method,
-      headers,
-      body: body ? JSON.stringify(body) : undefined,
-    });
+    // Abort eventually so a dead connection shows an error instead of spinning
+    // forever — generous because a free-tier server can take ~30s to wake up.
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 40000);
+    try {
+      return await fetch(`${API_URL}${path}`, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+        signal: ctrl.signal,
+      });
+    } catch {
+      throw new ApiError('network', 0);
+    } finally {
+      clearTimeout(timer);
+    }
   };
 
   let token = auth ? await getAccess() : null;
@@ -48,7 +59,8 @@ export async function api(path, { method = 'GET', body, auth = true, idempotency
   }
 
   const text = await res.text();
-  const data = text ? JSON.parse(text) : null;
+  let data = null;
+  try { data = text ? JSON.parse(text) : null; } catch { /* non-JSON error page from a proxy */ }
   if (!res.ok) throw new ApiError(data?.error || 'request_failed', res.status, data);
   return data;
 }

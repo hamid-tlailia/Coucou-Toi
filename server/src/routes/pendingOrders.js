@@ -6,6 +6,8 @@ const { validate } = require('../middleware/validate');
 const { withQuota } = require('../middleware/quota');
 const { trackingCode } = require('../lib/tracking');
 const { serialize: serializeOrder } = require('./orders');
+const { processIncomingMessage } = require('../services/aiPipeline');
+const { notify } = require('../lib/notify');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -19,6 +21,35 @@ router.get('/', async (req, res) => {
     take: 200,
   });
   res.json({ pendingOrders: pending.map(serialize) });
+});
+
+/*
+ * Paste a customer's message (copied from WhatsApp/Instagram/...) and let the
+ * AI turn it into a draft — works without connecting any Meta/TikTok webhook.
+ */
+const fromTextSchema = z.object({
+  text: z.string().trim().min(3).max(4000),
+  source: z.enum(['whatsapp', 'instagram', 'facebook', 'tiktok', 'manual']).default('manual'),
+});
+
+router.post('/from-text', validate(fromTextSchema), async (req, res) => {
+  const draft = await processIncomingMessage({ text: req.body.text });
+  const pending = await prisma.pendingOrder.create({
+    data: {
+      userId: req.user.id,
+      source: req.body.source,
+      customer: draft.customer,
+      phone: draft.phone,
+      city: draft.city,
+      address: draft.address,
+      items: draft.items,
+      total: draft.total,
+      pay: draft.pay,
+      rawText: draft.rawText,
+      confidence: draft.confidence,
+    },
+  });
+  res.status(201).json(serialize(pending));
 });
 
 /*
@@ -99,4 +130,13 @@ function serialize(p) {
   };
 }
 
+function notifyNewDraft(p) {
+  return notify(p.userId, {
+    type: 'new_draft',
+    title: '🤖 طلب جديد من البائع الذكي',
+    body: [p.customer, p.items].filter(Boolean).join(' — ') || 'رسالة جديدة بانتظار مراجعتك',
+  });
+}
+
 module.exports = router;
+module.exports.notifyNewDraft = notifyNewDraft;

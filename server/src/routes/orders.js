@@ -28,7 +28,10 @@ router.get('/', async (req, res) => {
     where.OR = [
       { code: term },
       { id: term },
+      { id: { endsWith: term.toLowerCase() } }, // short order number shown in the app (#A1B2C3)
       { customer: { contains: term, mode: 'insensitive' } },
+      { phone: { contains: term } },
+      { city: { contains: term, mode: 'insensitive' } },
     ];
   }
 
@@ -53,7 +56,12 @@ router.get('/stats', async (req, res) => {
 
 // Exact lookup by tracking code (scanner flow) — scoped to the caller's own orders.
 router.get('/lookup/:code', async (req, res) => {
-  const order = await prisma.order.findFirst({ where: { userId: req.user.id, code: req.params.code } });
+  const term = req.params.code.trim().replace(/^#/, '');
+  let order = await prisma.order.findFirst({ where: { userId: req.user.id, code: term } });
+  // Typed by hand: accept the short order number printed on the invoice.
+  if (!order && term.length >= 4) {
+    order = await prisma.order.findFirst({ where: { userId: req.user.id, id: { endsWith: term.toLowerCase() } } });
+  }
   if (!order) return res.status(404).json({ error: 'not_found' });
   res.json(serialize(order));
 });
@@ -104,6 +112,11 @@ router.post('/', validate(createSchema), async (req, res) => {
 const patchSchema = z.object({
   status: z.enum(['new', 'processing', 'shipped', 'delivered']).optional(),
   pay: z.enum(['paid', 'unpaid', 'cod']).optional(),
+  customer: z.string().trim().min(1).max(120).optional(),
+  phone: z.string().trim().min(4).max(30).optional(),
+  city: z.string().trim().max(120).optional(),
+  items: z.string().trim().max(500).optional(),
+  total: z.number().nonnegative().max(1_000_000).optional(),
 });
 
 router.patch('/:id', validate(patchSchema), async (req, res) => {
@@ -113,11 +126,18 @@ router.patch('/:id', validate(patchSchema), async (req, res) => {
   res.json(serialize(updated));
 });
 
+router.delete('/:id', async (req, res) => {
+  const existing = await prisma.order.findFirst({ where: { id: req.params.id, userId: req.user.id } });
+  if (!existing) return res.status(404).json({ error: 'not_found' });
+  await prisma.order.delete({ where: { id: existing.id } });
+  res.json({ ok: true });
+});
+
 function serialize(o) {
   return {
     id: o.id, customer: o.customer, phone: o.phone, city: o.city, items: o.items,
     total: Number(o.total), status: o.status, pay: o.pay, source: o.source,
-    code: o.code, date: o.date.toISOString().slice(0, 10),
+    code: o.code, date: o.date.toISOString().slice(0, 10), createdAt: o.date.toISOString(),
   };
 }
 

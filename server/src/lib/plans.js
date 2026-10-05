@@ -8,7 +8,11 @@ const PLANS = {
   business: { quota: 2500, price: 150, priceY: 1500 },
 };
 
-const planOf = (id) => PLANS[id] || PLANS.free;
+// Private build (shared directly, not via the stores): no paywall, no limit.
+const PRIVATE_MODE = process.env.PRIVATE_MODE !== 'false';
+const UNLIMITED = { quota: Infinity, price: 0, priceY: 0 };
+
+const planOf = (id) => (PRIVATE_MODE ? UNLIMITED : PLANS[id] || PLANS.free);
 
 // Apple/Google product ids -> our internal plan id + cycle.
 const SKU_MAP = {
@@ -20,4 +24,4 @@ const SKU_MAP = {
   'com.cocolove.orders.business.yearly':  { plan: 'business', cycle: 'yearly' },
 };
 
-module.exports = { PLANS, planOf, SKU_MAP };
+module.exports = { PLANS, planOf, SKU_MAP, PRIVATE_MODE };
