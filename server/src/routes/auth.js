@@ -20,7 +20,7 @@ const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, standardHeade
 router.use(authLimiter);
 
 function publicUser(u) {
-  const { passwordHash, providerSub, ...pub } = u;
+  const { passwordHash, providerSub, pushToken, ...pub } = u;
   return pub;
 }
 

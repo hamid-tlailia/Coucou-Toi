@@ -1,114 +1,79 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Alert } from 'react-native';
-import * as AppleAuthentication from 'expo-apple-authentication';
+import { View, ScrollView, KeyboardAvoidingView, Platform, Image } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../auth/AuthContext';
-import { Input, PrimaryButton } from '../components/ui';
-import { DEEP, PLUM } from '../theme';
+import { usePrefs } from '../context/Prefs';
+import { Txt, Input, Button, FadeIn, haptic } from '../components/ui';
+import { RED } from '../theme';
 
-export default function AuthScreen({ t, th, theme }) {
-  const { signInWithGoogle, signInWithApple, signInWithEmail, signUpWithEmail } = useAuth();
+export default function AuthScreen() {
+  const { signIn, signUp } = useAuth();
+  const { t, th } = usePrefs();
   const [mode, setMode] = useState('in');
-  const [busy, setBusy] = useState('');
+  const [busy, setBusy] = useState(false);
   const [f, setF] = useState({ name: '', store: '', email: '', pass: '' });
-  const [err, setErr] = useState({});
-
-  const validEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
+  const [err, setErr] = useState('');
 
   const submit = async () => {
-    const e = {};
-    if (!validEmail(f.email)) e.email = t.badEmail;
-    if (f.pass.length < 8) e.pass = t.badPass;
-    if (mode === 'up' && !f.name.trim()) e.name = t.required;
-    setErr(e);
-    if (Object.keys(e).length) return;
-    setBusy('email');
+    const email = f.email.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return setErr(t.badEmail);
+    if (f.pass.length < 8) return setErr(t.badPass);
+    if (mode === 'up' && !f.name.trim()) return setErr(t.required);
+    setErr('');
+    setBusy(true);
     try {
-      if (mode === 'up') await signUpWithEmail({ name: f.name, store: f.store, email: f.email, password: f.pass });
-      else await signInWithEmail(f.email, f.pass);
-    } catch (ex) {
-      setErr({ pass: ex.data?.message || t.error });
+      if (mode === 'up') await signUp({ name: f.name.trim(), store: f.store.trim() || undefined, email, password: f.pass });
+      else await signIn(email, f.pass);
+      haptic('success');
+    } catch (e) {
+      haptic('error');
+      setErr(e.code === 'network' ? t.offline : e.code === 'email_taken' ? t.emailTaken : e.status === 401 ? t.badLogin : t.error);
     } finally {
-      setBusy('');
+      setBusy(false);
     }
   };
 
-  const google = async () => {
-    setBusy('google');
-    try { await signInWithGoogle(); } catch { Alert.alert(t.error); } finally { setBusy(''); }
-  };
-  const apple = async () => {
-    setBusy('apple');
-    try { await signInWithApple(); } catch { /* user cancelled — no toast needed */ } finally { setBusy(''); }
-  };
-
   return (
-    <View style={{ flex: 1, padding: 26, paddingTop: 44, justifyContent: 'center' }}>
-      <View style={{ alignItems: 'center', marginBottom: 26 }}>
-        <View style={[styles.logo]}><Text style={styles.logoText}>CL</Text></View>
-        <Text style={[styles.title, { color: th.text }]}>{t.welcome}</Text>
-        <Text style={[styles.sub, { color: th.muted }]}>{t.authSub}</Text>
-      </View>
+    <LinearGradient colors={th.mode === 'dark' ? ['#2B1A31', '#0F0A11', '#0F0A11'] : ['#EFE3D3', '#F7F3ED', '#F7F3ED']} style={{ flex: 1 }}>
+      <SafeAreaView style={{ flex: 1 }}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+          <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 26 }} keyboardShouldPersistTaps="handled">
+            <FadeIn style={{ alignItems: 'center', marginBottom: 34 }}>
+              <Image source={require('../../assets/icon.png')} style={{ width: 96, height: 96, borderRadius: 30, marginBottom: 20 }} />
+              <Txt w="x" size={30}>{t.welcome}</Txt>
+              <Txt size={14.5} color={th.muted} style={{ marginTop: 6, textAlign: 'center' }}>{t.authSub}</Txt>
+            </FadeIn>
 
-      <ButtonRow onPress={google} th={th} busy={busy === 'google'} label={t.continueGoogle} icon="G" />
+            <FadeIn delay={120}>
+              <View style={{ flexDirection: 'row', backgroundColor: th.raised, borderRadius: 16, padding: 4, marginBottom: 8, borderWidth: 1, borderColor: th.border }}>
+                {[['in', t.signIn], ['up', t.signUp]].map(([k, l]) => (
+                  <View key={k} style={{ flex: 1 }}>
+                    <Button small title={l} variant={mode === k ? 'gold' : 'ghost'} onPress={() => { setMode(k); setErr(''); }}
+                      style={mode !== k && { opacity: 0.8 }} />
+                  </View>
+                ))}
+              </View>
 
-      {AppleAuthentication.isAvailableAsync && (
-        <View style={{ marginBottom: 18 }}>
-          <AppleAuthentication.AppleAuthenticationButton
-            buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
-            buttonStyle={theme === 'light' ? AppleAuthentication.AppleAuthenticationButtonStyle.BLACK : AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
-            cornerRadius={12}
-            style={{ height: 46 }}
-            onPress={apple}
-          />
-        </View>
-      )}
+              {mode === 'up' && (
+                <>
+                  <Input icon="person-outline" label={t.fullName} value={f.name} onChangeText={(v) => setF({ ...f, name: v })} />
+                  <Input icon="storefront-outline" label={t.storeName} value={f.store} onChangeText={(v) => setF({ ...f, store: v })} />
+                </>
+              )}
+              <Input icon="mail-outline" label={t.email} autoCapitalize="none" keyboardType="email-address" autoComplete="email"
+                value={f.email} onChangeText={(v) => setF({ ...f, email: v })} />
+              <Input icon="lock-closed-outline" label={t.password} secureTextEntry autoComplete="password"
+                value={f.pass} onChangeText={(v) => setF({ ...f, pass: v })} onSubmitEditing={submit} />
 
-      <View style={styles.dividerRow}>
-        <View style={[styles.divider, { backgroundColor: th.border }]} />
-        <Text style={{ color: th.muted, fontSize: 11 }}>{t.orEmail}</Text>
-        <View style={[styles.divider, { backgroundColor: th.border }]} />
-      </View>
+              {!!err && <Txt w="m" size={13} color={RED} style={{ marginTop: 12, textAlign: 'center' }}>{err}</Txt>}
 
-      {mode === 'up' && (
-        <>
-          <Input th={th} placeholder={t.fullName} value={f.name} onChangeText={(v) => setF({ ...f, name: v })} style={{ marginBottom: err.name ? 4 : 10 }} />
-          {!!err.name && <ErrText th={th}>{err.name}</ErrText>}
-          <Input th={th} placeholder={t.storeName} value={f.store} onChangeText={(v) => setF({ ...f, store: v })} style={{ marginBottom: 10 }} />
-        </>
-      )}
-      <Input th={th} placeholder={t.email} autoCapitalize="none" keyboardType="email-address" value={f.email} onChangeText={(v) => setF({ ...f, email: v })} style={{ marginBottom: err.email ? 4 : 10 }} />
-      {!!err.email && <ErrText th={th}>{err.email}</ErrText>}
-      <Input th={th} placeholder={t.password} secureTextEntry value={f.pass} onChangeText={(v) => setF({ ...f, pass: v })} style={{ marginBottom: err.pass ? 4 : 16 }} />
-      {!!err.pass && <ErrText th={th}>{err.pass}</ErrText>}
-
-      <PrimaryButton th={th} title={mode === 'in' ? t.signIn : t.signUp} onPress={submit} loading={busy === 'email'} />
-
-      <Text onPress={() => { setMode(mode === 'in' ? 'up' : 'in'); setErr({}); }} style={{ textAlign: 'center', color: th.muted, fontSize: 12.5, marginTop: 16 }}>
-        {mode === 'in' ? t.noAccount : t.haveAccount}
-      </Text>
-    </View>
+              <Button title={mode === 'in' ? t.signIn : t.signUp} icon={mode === 'in' ? 'log-in-outline' : 'sparkles-outline'}
+                onPress={submit} loading={busy} style={{ marginTop: 24 }} />
+            </FadeIn>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
-
-function ButtonRow({ onPress, th, busy, label, icon }) {
-  return (
-    <View onTouchEnd={onPress} style={[styles.oauthBtn, { borderColor: th.border, backgroundColor: th.surface }]}>
-      {busy ? <ActivityIndicator size="small" color={PLUM} /> : <Text style={styles.oauthIcon}>{icon}</Text>}
-      <Text style={{ color: th.text, fontWeight: '600', fontSize: 13.5 }}>{label}</Text>
-    </View>
-  );
-}
-function ErrText({ children, th }) {
-  return <Text style={{ color: '#C24B44', fontSize: 11.5, marginBottom: 10 }}>{children}</Text>;
-}
-
-const styles = StyleSheet.create({
-  logo: { width: 62, height: 62, borderRadius: 21, backgroundColor: DEEP, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
-  logoText: { color: '#F3D9A8', fontWeight: '700', fontSize: 22 },
-  title: { fontSize: 22, fontWeight: '700' },
-  sub: { fontSize: 13, marginTop: 5, textAlign: 'center' },
-  oauthBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, borderWidth: 1.5, borderRadius: 12, paddingVertical: 12, marginBottom: 10 },
-  oauthIcon: { fontWeight: '800', color: '#4285F4' },
-  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 16 },
-  divider: { flex: 1, height: 1 },
-});

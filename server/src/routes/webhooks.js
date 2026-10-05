@@ -2,6 +2,7 @@ const express = require('express');
 const crypto = require('crypto');
 const { prisma } = require('../lib/db');
 const { processIncomingMessage } = require('../services/aiPipeline');
+const { notifyNewDraft } = require('./pendingOrders');
 
 const router = express.Router();
 
@@ -88,7 +89,7 @@ async function channelAccountFor(channel, externalId) {
  */
 async function createPendingOrderFromMessage({ userId, source, text, audioUrl, imageUrl }) {
   const draft = await processIncomingMessage({ text, audioUrl, imageUrl });
-  return prisma.pendingOrder.create({
+  const pending = await prisma.pendingOrder.create({
     data: {
       userId,
       source,
@@ -104,6 +105,8 @@ async function createPendingOrderFromMessage({ userId, source, text, audioUrl, i
       confidence: draft.confidence,
     },
   });
+  await notifyNewDraft(pending);
+  return pending;
 }
 
 /* ============================================================

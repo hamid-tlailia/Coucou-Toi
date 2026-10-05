@@ -58,6 +58,9 @@ model User {
   passwordHash  String?       // null for OAuth-only accounts
   name          String
   store         String?
+  storePhone    String?       // printed on invoices
+  storeAddress  String?       // printed on invoices
+  pushToken     String?       // Expo push token of the merchant's phone
   provider      AuthProvider
   providerSub   String?       // Google `sub` / Apple `sub` — used to re-match on future sign-ins
   plan          PlanId        @default(free)
@@ -71,6 +74,8 @@ model User {
   subscriptions   Subscription[]
   channelAccounts ChannelAccount[]
   pendingOrders   PendingOrder[]
+  notifications   Notification[]
+  visits          Visit[]
 
   @@index([providerSub])
 }
@@ -170,4 +175,33 @@ model Subscription {
   updatedAt       DateTime     @updatedAt
 
   @@index([userId])
+}
+
+// In-app notification feed (bell icon). Every row is also pushed to the
+// merchant's phone when a push token is registered.
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String    // new_draft | order_created | order_paid | order_delivered | tracking_viewed
+  title     String
+  body      String
+  orderId   String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, createdAt])
+}
+
+// One row per visit: the merchant opening the app, or a customer opening
+// the public tracking page of their order (link sent on WhatsApp).
+model Visit {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      String   // app_open | tracking_page
+  orderId   String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }

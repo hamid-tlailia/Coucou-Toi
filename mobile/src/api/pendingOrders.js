@@ -14,3 +14,7 @@ export const approvePendingOrder = (id, overrides = {}) =>
 
 export const rejectPendingOrder = (id) =>
   api(`/pending-orders/${id}/reject`, { method: 'POST' });
+
+/** AI extraction of a pasted customer message → a new draft to review. */
+export const draftFromText = (text, source = 'manual') =>
+  api('/pending-orders/from-text', { method: 'POST', body: { text, source } });

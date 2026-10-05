@@ -10,6 +10,10 @@ const meRoutes = require('./routes/me');
 const billingRoutes = require('./routes/billing');
 const webhookRoutes = require('./routes/webhooks');
 const pendingOrderRoutes = require('./routes/pendingOrders');
+const notificationRoutes = require('./routes/notifications');
+const dashboardRoutes = require('./routes/dashboard');
+const visitRoutes = require('./routes/visits');
+const trackingRoutes = require('./routes/tracking');
 
 const app = express();
 
@@ -43,6 +47,10 @@ app.use('/orders', orderRoutes);
 app.use('/pending-orders', pendingOrderRoutes);
 app.use('/me', meRoutes);
 app.use('/billing', billingRoutes);
+app.use('/notifications', notificationRoutes);
+app.use('/dashboard', dashboardRoutes);
+app.use('/visits', visitRoutes);
+app.use('/t', trackingRoutes); // public order-tracking page sent to customers
 app.use('/webhooks', webhookRoutes); // public — Meta/TikTok call these directly, auth is per-provider signature/token
 
 // Centralized error handler — never leak stack traces or internals to the client.
@@ -53,4 +61,4 @@ app.use((err, req, res, next) => {
 });
 
 const port = process.env.PORT || 8080;
-app.listen(port, () => console.log(`cocolove api listening on :${port}`));
+app.listen(port, '0.0.0.0', () => console.log(`cocolove api listening on :${port}`));
