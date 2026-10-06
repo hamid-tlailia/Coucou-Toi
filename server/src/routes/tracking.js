@@ -1,6 +1,7 @@
 const express = require('express');
 const { prisma } = require('../lib/db');
 const { notify } = require('../lib/notify');
+const { background } = require('../lib/background');
 
 /**
  * Public order-tracking page — the link sent to the customer on WhatsApp.
@@ -28,12 +29,12 @@ router.get('/:code', async (req, res) => {
   const seenBefore = await prisma.visit.count({ where: { orderId: order.id, kind: 'tracking_page' } });
   await prisma.visit.create({ data: { userId: order.userId, kind: 'tracking_page', orderId: order.id } });
   if (!seenBefore) {
-    notify(order.userId, {
+    background(notify(order.userId, {
       type: 'tracking_viewed',
       title: '👀 العميل فتح رابط التتبع',
       body: `${order.customer} شاهد حالة طلبه`,
       orderId: order.id,
-    });
+    }));
   }
 
   const at = STEPS.findIndex(([k]) => k === order.status);

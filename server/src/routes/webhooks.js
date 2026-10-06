@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const { prisma } = require('../lib/db');
 const { processIncomingMessage } = require('../services/aiPipeline');
 const { notifyNewDraft } = require('./pendingOrders');
+const { background } = require('../lib/background');
 
 const router = express.Router();
 
@@ -112,9 +113,9 @@ async function createPendingOrderFromMessage({ userId, source, text, audioUrl, i
 /* ============================================================
  * WhatsApp Cloud API
  * ============================================================ */
-router.post('/whatsapp', verifyMetaSignature, async (req, res) => {
+router.post('/whatsapp', verifyMetaSignature, (req, res) => {
   res.sendStatus(200); // ack immediately — Meta retries aggressively on anything else
-  try {
+  background((async () => {
     const value = req.body?.entry?.[0]?.changes?.[0]?.value;
     const message = value?.messages?.[0];
     if (!message) return;
@@ -133,9 +134,7 @@ router.post('/whatsapp', verifyMetaSignature, async (req, res) => {
       audioUrl,
       imageUrl,
     });
-  } catch (e) {
-    console.error('whatsapp webhook failed', e);
-  }
+  })().catch((e) => console.error('whatsapp webhook failed', e)));
 });
 
 /* ============================================================
@@ -143,9 +142,9 @@ router.post('/whatsapp', verifyMetaSignature, async (req, res) => {
  * "messaging" entry shape once subscribed on a page.
  * ============================================================ */
 function messengerLikeHandler(channel) {
-  return async (req, res) => {
+  return (req, res) => {
     res.sendStatus(200);
-    try {
+    background((async () => {
       const messaging = req.body?.entry?.[0]?.messaging?.[0];
       const message = messaging?.message;
       if (!message || message.is_echo) return; // ignore delivery receipts and our own outgoing messages
@@ -164,9 +163,7 @@ function messengerLikeHandler(channel) {
         audioUrl,
         imageUrl,
       });
-    } catch (e) {
-      console.error(`${channel} webhook failed`, e);
-    }
+    })().catch((e) => console.error(`${channel} webhook failed`, e)));
   };
 }
 
@@ -180,9 +177,9 @@ router.post('/messenger', verifyMetaSignature, messengerLikeHandler('facebook'))
  * url) but MUST be checked against the merchant's actual TikTok API
  * response before going live.
  * ============================================================ */
-router.post('/tiktok', async (req, res) => {
+router.post('/tiktok', (req, res) => {
   res.sendStatus(200);
-  try {
+  background((async () => {
     const event = req.body?.data || req.body;
     if (!event?.message) return;
 
@@ -196,9 +193,7 @@ router.post('/tiktok', async (req, res) => {
       audioUrl: event.message?.audio_url || null,
       imageUrl: event.message?.image_url || null,
     });
-  } catch (e) {
-    console.error('tiktok webhook failed', e);
-  }
+  })().catch((e) => console.error('tiktok webhook failed', e)));
 });
 
 module.exports = router;
