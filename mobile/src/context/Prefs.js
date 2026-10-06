@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from '../lib/store';
 import { Ionicons } from '@expo/vector-icons';
 import { STRINGS, deviceLang } from '../i18n';
 import { THEMES, GREEN, RED, GOLD, FONT } from '../theme';

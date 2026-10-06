@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from './store';
 
 /*
  * WhatsApp, Instagram, Messenger and TikTok don't offer "Share" on a text
@@ -36,6 +36,7 @@ export default function useCopiedMessage() {
   const [text, setText] = useState(null);
 
   const check = useCallback(async () => {
+    if (Platform.OS === 'web') return; // Safari asks before every clipboard read
     try {
       if (!(await Clipboard.hasStringAsync())) return;
       const s = (await Clipboard.getStringAsync()).trim();

@@ -1,3 +1,5 @@
+/* global document */
+import { Platform } from 'react-native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { qrSvgMarkup } from './QR';
@@ -88,8 +90,27 @@ export function invoiceHtml({ order, user, t }) {
 </div></body></html>`;
 }
 
+/**
+ * Web app: browsers can't make a PDF file here, so the invoice opens in the
+ * print screen — on iPhone it offers "Save to Files" and sharing as PDF.
+ */
+function printOnWeb(html) {
+  const frame = document.createElement('iframe');
+  frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0';
+  document.body.appendChild(frame);
+  frame.contentDocument.open();
+  frame.contentDocument.write(html);
+  frame.contentDocument.close();
+  return new Promise((resolve) => setTimeout(() => {
+    frame.contentWindow.focus();
+    frame.contentWindow.print();
+    setTimeout(() => { frame.remove(); resolve(); }, 1500);
+  }, 400));
+}
+
 export async function shareInvoicePdf(args) {
   const html = invoiceHtml(args);
+  if (Platform.OS === 'web') return printOnWeb(html);
   const { uri } = await Print.printToFileAsync({ html });
   try {
     if (!(await Sharing.isAvailableAsync())) throw new Error('sharing unavailable');
@@ -102,4 +123,4 @@ export async function shareInvoicePdf(args) {
   return uri;
 }
 
-export const printInvoice = (args) => Print.printAsync({ html: invoiceHtml(args) });
+export const printInvoice = (args) => (Platform.OS === 'web' ? printOnWeb(invoiceHtml(args)) : Print.printAsync({ html: invoiceHtml(args) }));

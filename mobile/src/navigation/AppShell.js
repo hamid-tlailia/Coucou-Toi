@@ -117,8 +117,9 @@ export default function AppShell() {
     }
   }, [go]);
 
-  const enablePush = useCallback(async () => {
-    const m = await registerForNotifications().catch(() => 'denied');
+  // fromTap: the web app (iPhone) may only ask for permission from a tap.
+  const enablePush = useCallback(async (fromTap = false) => {
+    const m = await registerForNotifications(fromTap).catch(() => 'denied');
     pushModeRef.current = m;
     setPushMode(m);
   }, []);
@@ -172,7 +173,7 @@ export default function AppShell() {
       case 'orders': return <OrdersScreen refreshKey={refreshKey} onOpenOrder={setDetail} />;
       case 'smart': return <SmartOrdersScreen refreshKey={refreshKey} shared={shared} onCountChange={setSmartCount} onApproved={(o) => { refresh(); setTimeout(() => setInvoice(o), 200); }} />;
       case 'scan': return <ScanScreen onOpenOrder={setDetail} onChanged={refresh} />;
-      case 'profile': return <ProfileScreen pushMode={pushMode} onEnablePush={enablePush} />;
+      case 'profile': return <ProfileScreen pushMode={pushMode} onEnablePush={() => enablePush(true)} />;
       default: return null;
     }
   };

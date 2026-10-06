@@ -1,4 +1,5 @@
 const { JWT } = require('google-auth-library');
+const webpush = require('web-push');
 const { prisma } = require('./db');
 
 /**
@@ -11,16 +12,18 @@ const { prisma } = require('./db');
  *  - anything else            → a native FCM token, sent directly through
  *    Firebase Cloud Messaging with the service account in
  *    FIREBASE_SERVICE_ACCOUNT (no Expo account needed)
+ * Plus, independently, the home-screen web app (iPhone) via Web Push.
  */
 async function notify(userId, { type, title, body, orderId = null }) {
   try {
     const n = await prisma.notification.create({ data: { userId, type, title, body, orderId } });
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: { pushToken: true } });
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { pushToken: true, webPushSub: true } });
+    const payload = { title, body, data: { type, orderId, notificationId: n.id } };
     if (user?.pushToken) {
-      const payload = { title, body, data: { type, orderId, notificationId: n.id } };
       if (user.pushToken.startsWith('ExponentPushToken')) await sendExpo(user.pushToken, payload);
       else await sendFcm(user.pushToken, payload);
     }
+    if (user?.webPushSub) await sendWebPush(userId, user.webPushSub, payload);
     return n;
   } catch (e) {
     console.error('notify failed', e);
@@ -81,6 +84,28 @@ async function sendFcm(token, { title, body, data }) {
     }
   } catch (e) {
     console.error('fcm push failed', e);
+  }
+}
+
+let vapidReady = null;
+function vapid() {
+  if (vapidReady === null) {
+    const { VAPID_PUBLIC_KEY: pub, VAPID_PRIVATE_KEY: priv } = process.env;
+    vapidReady = !!(pub && priv);
+    if (vapidReady) webpush.setVapidDetails(process.env.VAPID_SUBJECT || 'https://coco-love-api.vercel.app', pub, priv);
+  }
+  return vapidReady;
+}
+
+async function sendWebPush(userId, sub, payload) {
+  if (!vapid()) return;
+  try {
+    await webpush.sendNotification(JSON.parse(sub), JSON.stringify(payload), { TTL: 24 * 3600, urgency: 'high' });
+  } catch (e) {
+    // Subscription gone (app removed from the home screen / permission revoked).
+    if (e.statusCode === 404 || e.statusCode === 410) {
+      await prisma.user.update({ where: { id: userId }, data: { webPushSub: null } }).catch(() => {});
+    } else console.error('web push failed', e.statusCode, e.body || e.message);
   }
 }
 

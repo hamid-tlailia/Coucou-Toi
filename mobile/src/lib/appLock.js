@@ -1,9 +1,12 @@
+import { Platform } from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from './store';
 
 const KEY = 'ccl.applock.enabled';
 
-export const isAppLockEnabled = async () => (await SecureStore.getItemAsync(KEY)) === '1';
+// No fingerprint / Face ID lock in the web app (browsers can't ask for it).
+export const lockSupported = Platform.OS !== 'web';
+export const isAppLockEnabled = async () => lockSupported && (await SecureStore.getItemAsync(KEY)) === '1';
 export const setAppLockEnabled = (v) => SecureStore.setItemAsync(KEY, v ? '1' : '0');
 
 /**

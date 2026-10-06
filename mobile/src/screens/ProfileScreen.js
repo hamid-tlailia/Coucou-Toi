@@ -6,7 +6,7 @@ import { useAuth } from '../auth/AuthContext';
 import { usePrefs } from '../context/Prefs';
 import { Txt, Card, Input, Button, Press, haptic } from '../components/ui';
 import { updateMe, sendTestNotification } from '../api/account';
-import { isAppLockEnabled, setAppLockEnabled, requireBiometricUnlock } from '../lib/appLock';
+import { isAppLockEnabled, setAppLockEnabled, requireBiometricUnlock, lockSupported } from '../lib/appLock';
 import { GOLD, GREEN, RED, CLEAR } from '../theme';
 import CaptureCard from '../components/CaptureCard';
 import { disableCapture } from '../lib/capture';
@@ -70,7 +70,7 @@ export default function ProfileScreen({ pushMode, onEnablePush }) {
 
       <Card style={{ marginTop: 14 }}>
         <Txt w="b" size={16} style={{ marginBottom: 4 }}>{t.security}</Txt>
-        <Row icon="finger-print" label={t.appLock} right={<Switch value={lock} onValueChange={toggleLock} trackColor={{ true: GOLD, false: th.raised }} thumbColor="#FFF" />} />
+        {lockSupported && <Row icon="finger-print" label={t.appLock} right={<Switch value={lock} onValueChange={toggleLock} trackColor={{ true: GOLD, false: th.raised }} thumbColor="#FFF" />} />}
         <Press onPress={pushMode !== 'push' ? onEnablePush : undefined}>
           <Row icon="notifications-outline" label={t.pushNotif}
             right={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>

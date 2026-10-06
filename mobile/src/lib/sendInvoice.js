@@ -16,6 +16,9 @@ import Native from '../../modules/coucou-capture';
  *  - manual order → the system share menu.
  * Returns 'chat' | 'app' | 'menu'.
  */
+/** Web only (see sendInvoice.web.js). */
+export const prepareInvoiceImage = () => {};
+
 export async function sendInvoiceImage(viewRef, order, t) {
   const message = orderMessage(order, t);
   const phone = waNumber(order.phone);

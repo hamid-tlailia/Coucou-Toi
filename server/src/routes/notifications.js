@@ -48,6 +48,22 @@ router.put('/push-token', validate(tokenSchema), async (req, res) => {
 });
 
 // "Send a test notification" button in Settings.
+// Home-screen web app (iPhone): the key to subscribe with, and the subscription.
+router.get('/vapid-key', (req, res) => res.json({ key: process.env.VAPID_PUBLIC_KEY || null }));
+
+const webPushSchema = z.object({
+  subscription: z.object({
+    endpoint: z.string().url().max(1000),
+    keys: z.object({ p256dh: z.string().max(200), auth: z.string().max(100) }),
+  }).nullable(),
+});
+
+router.put('/web-push', validate(webPushSchema), async (req, res) => {
+  const sub = req.body.subscription;
+  await prisma.user.update({ where: { id: req.user.id }, data: { webPushSub: sub ? JSON.stringify(sub) : null } });
+  res.json({ ok: true });
+});
+
 router.post('/test', async (req, res) => {
   await notify(req.user.id, { type: 'test', title: '🔔 Coucou Toi', body: 'الإشعارات تعمل بنجاح ✨' });
   res.json({ ok: true, push: !!req.user.pushToken });

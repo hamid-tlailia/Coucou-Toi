@@ -9,7 +9,7 @@ import QR from '../lib/QR';
 import { formatTND } from '../lib/money';
 import { shareInvoicePdf, printInvoice } from '../lib/invoice';
 import { ltr } from '../lib/orderActions';
-import { sendInvoiceImage } from '../lib/sendInvoice';
+import { sendInvoiceImage, prepareInvoiceImage } from '../lib/sendInvoice';
 import { shortNo } from '../api/orders';
 import { trackingUrl } from '../config';
 import { PAY_COLORS, GOLD_GRAD } from '../theme';
@@ -35,7 +35,8 @@ export default function InvoiceSheet({ order, onClose }) {
     <BottomSheet visible={!!order} onClose={onClose}>
       {/* Paper preview — always light, like the real document */}
       {/* Also the picture sent to the customer (captured as is). */}
-      <View ref={paper} collapsable={false} style={{ backgroundColor: '#FFFDF9', borderRadius: 22, overflow: 'hidden', marginTop: 6 }}>
+      <View ref={paper} collapsable={false} onLayout={() => setTimeout(() => prepareInvoiceImage(paper, order), 600)}
+        style={{ backgroundColor: '#FFFDF9', borderRadius: 22, overflow: 'hidden', marginTop: 6 }}>
         <LinearGradient colors={GOLD_GRAD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ height: 6 }} />
         <View style={{ padding: 18 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 14 }}>

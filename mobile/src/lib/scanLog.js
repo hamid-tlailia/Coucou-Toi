@@ -1,14 +1,12 @@
-import * as FileSystem from 'expo-file-system';
+import { readJson, writeJson } from './jsonFile';
 
 // Scan history kept on the phone (survives restarts), newest first.
-const FILE = `${FileSystem.documentDirectory}scan-log.json`;
+const FILE = 'scan-log.json';
 const MAX = 100;
 
-export async function loadScanLog() {
-  try { return JSON.parse(await FileSystem.readAsStringAsync(FILE)); } catch { return []; }
-}
+export const loadScanLog = async () => (await readJson(FILE)) || [];
 
-const save = (log) => FileSystem.writeAsStringAsync(FILE, JSON.stringify(log)).catch(() => {});
+const save = (log) => writeJson(FILE, log);
 
 const entryOf = (o) => ({
   id: o.id, code: o.code, customer: o.customer, city: o.city, total: o.total,

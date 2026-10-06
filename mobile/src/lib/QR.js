@@ -30,8 +30,9 @@ export default function QR({ value, size = 150, dark = '#241726', light = '#FFFF
   return (
     <Svg width={size} height={size} viewBox={`0 0 ${matrix} ${matrix}`}>
       <Rect x={0} y={0} width={matrix} height={matrix} fill={light} />
+      {/* Rows overlap a hair so no seam shows between them in pictures of the invoice. */}
       {cells.map((c, i) => (
-        <Rect key={i} x={c.x} y={c.y} width={c.w} height={1} fill={dark} />
+        <Rect key={i} x={c.x} y={c.y} width={c.w} height={1.06} fill={dark} />
       ))}
     </Svg>
   );

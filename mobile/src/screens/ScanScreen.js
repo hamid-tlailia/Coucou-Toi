@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, StyleSheet, Animated, ScrollView } from 'react-native';
 import { CameraView, useCameraPermissions, scanFromURLAsync } from 'expo-camera';
 import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system';
+import { fileBase64 } from '../lib/fileBase64';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { Ionicons } from '@expo/vector-icons';
 import { usePrefs } from '../context/Prefs';
@@ -89,7 +89,7 @@ export default function ScanScreen({ onOpenOrder, onChanged }) {
       let mimeType;
       if (isPdf) {
         if (file.size > 2_800_000) throw Object.assign(new Error(), { code: 'too_big' });
-        data = await FileSystem.readAsStringAsync(file.uri, { encoding: FileSystem.EncodingType.Base64 });
+        data = await fileBase64(file);
         mimeType = 'application/pdf';
       } else {
         const img = await ImageManipulator.manipulateAsync(file.uri, [{ resize: { width: 1400 } }],

@@ -32,7 +32,10 @@ app.use(express.json({
   verify: (req, res, buf) => { req.rawBody = buf; }, // needed to check Meta's X-Hub-Signature-256 on /webhooks/*
 }));
 
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean);
+const allowedOrigins = [
+  ...(process.env.ALLOWED_ORIGINS || '').split(','),
+  process.env.WEB_APP_URL || 'https://coucou-toi-app.vercel.app', // the home-screen web app (iPhone)
+].map((s) => s.trim().replace(/\/+$/, '')).filter(Boolean);
 app.use(cors({
   origin(origin, cb) {
     // Native apps (no browser Origin header) are allowed through; browsers
