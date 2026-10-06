@@ -5,6 +5,7 @@ import { orderMessage, waNumber } from './orderActions';
 import { isSocial } from './contact';
 import { markClipSeen } from './copiedMessage';
 import { shortNo } from '../api/orders';
+import Native from '../../modules/coucou-capture';
 
 /**
  * Sends the order to the customer as an invoice picture (with its QR) and the
@@ -20,14 +21,8 @@ export async function sendInvoiceImage(viewRef, order, t) {
   const message = orderMessage(order, t);
   const filename = `invoice-${shortNo(order).slice(1)}`;
 
-  if (!isSocial(order.source)) {
-    for (const social of [Share.Social.WHATSAPP, Share.Social.WHATSAPPBUSINESS]) {
-      try {
-        await Share.shareSingle({ social, url, message, filename, type: 'image/png', whatsAppNumber: waNumber(order.phone) });
-        return 'whatsapp';
-      } catch { /* this WhatsApp isn't installed → next */ }
-    }
-  }
+  // One direct intent into the customer's chat, picture + caption together.
+  if (!isSocial(order.source) && Native?.sendImageToWhatsApp(base64, waNumber(order.phone), message)) return 'whatsapp';
   await Clipboard.setStringAsync(message);
   markClipSeen(message);
   await Share.open({ url, message, filename, type: 'image/png', failOnCancel: false });

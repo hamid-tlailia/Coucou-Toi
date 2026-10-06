@@ -2,16 +2,14 @@
   <uses-permission android:name="android.permission.INTERNET" />
 
   <application>
-    <!-- Reads customer messages from WhatsApp / Instagram / Messenger / TikTok notifications (opt-in, granted in system settings). -->
-    <service
-      android:name="expo.modules.coucoucapture.MessageListenerService"
-      android:label="Coucou Toi"
-      android:exported="true"
-      android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
-      <intent-filter>
-        <action android:name="android.service.notification.NotificationListenerService" />
-      </intent-filter>
-    </service>
+    <!-- Hands the invoice picture to WhatsApp. -->
+    <provider
+      android:name="expo.modules.coucoucapture.CoucouFileProvider"
+      android:authorities="${applicationId}.coucou.files"
+      android:exported="false"
+      android:grantUriPermissions="true">
+      <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/coucou_file_paths" />
+    </provider>
 
     <!-- Quick-settings tile: sends the copied message for analysis without leaving the chat. -->
     <service

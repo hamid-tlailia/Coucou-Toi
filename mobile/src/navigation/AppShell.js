@@ -13,6 +13,7 @@ import { registerForNotifications, showLocalNotification, onNotificationTap, onN
 
 import useSharedText from '../lib/useSharedText';
 import useCopiedMessage, { markClipSeen } from '../lib/copiedMessage';
+import { ensureCaptureKey } from '../lib/capture';
 import DashboardScreen from '../screens/DashboardScreen';
 import OrdersScreen from '../screens/OrdersScreen';
 import SmartOrdersScreen from '../screens/SmartOrdersScreen';
@@ -71,6 +72,7 @@ export default function AppShell() {
   useSharedText(analyse);
   // Message copied in WhatsApp/Instagram/… → offered here on return.
   const [copied, dismissCopied] = useCopiedMessage();
+  useEffect(() => { ensureCaptureKey(); }, []); // quick-settings button works without opening Settings first
 
   /* ---------- notifications ---------- */
   const poll = useCallback(async () => {

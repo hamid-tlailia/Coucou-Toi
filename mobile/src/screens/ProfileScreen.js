@@ -8,7 +8,8 @@ import { Txt, Card, Input, Button, Press, haptic } from '../components/ui';
 import { updateMe, sendTestNotification } from '../api/account';
 import { isAppLockEnabled, setAppLockEnabled, requireBiometricUnlock } from '../lib/appLock';
 import { GOLD, GREEN, RED, CLEAR } from '../theme';
-import CaptureCard, { disableCapture } from '../components/CaptureCard';
+import CaptureCard from '../components/CaptureCard';
+import { disableCapture } from '../lib/capture';
 
 export default function ProfileScreen({ pushMode, onEnablePush }) {
   const { user, setUser, signOut } = useAuth();

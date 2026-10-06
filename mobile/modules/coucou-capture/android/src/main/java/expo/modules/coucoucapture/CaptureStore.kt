@@ -11,27 +11,25 @@ import java.net.URL
 import java.util.concurrent.Executors
 
 /**
- * Settings + outbox for captured messages. Messages are queued first and
- * sent to the server's /ingest/message one by one; a busy AI or no network
- * leaves them queued for the next attempt, so nothing is lost.
+ * Settings + outbox for copied messages sent from the tile / selection menu.
+ * A message that can't be sent (busy AI, no network) is queued and retried
+ * on the next send, so nothing is lost.
  */
 object CaptureStore {
   private const val PREFS = "coucou_capture"
   private const val MAX_QUEUE = 200
   private const val MAX_ATTEMPTS = 8
-  private const val SEEN_TTL_MS = 6 * 60 * 60 * 1000L
   private val io = Executors.newSingleThreadExecutor()
   private val main = Handler(Looper.getMainLooper())
 
   private fun prefs(ctx: Context) = ctx.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
-  fun configure(ctx: Context, enabled: Boolean, apiUrl: String, token: String?) {
-    val e = prefs(ctx).edit().putBoolean("enabled", enabled).putString("apiUrl", apiUrl.trimEnd('/'))
+  /** Server address + capture key; token null keeps the stored one, "" signs the phone out. */
+  fun configure(ctx: Context, apiUrl: String, token: String?) {
+    val e = prefs(ctx).edit().putString("apiUrl", apiUrl.trimEnd('/'))
     if (token != null) e.putString("token", token)
     e.apply()
   }
-
-  fun isEnabled(ctx: Context) = prefs(ctx).getBoolean("enabled", false)
 
   fun isConfigured(ctx: Context): Boolean {
     val p = prefs(ctx)
@@ -39,25 +37,6 @@ object CaptureStore {
   }
 
   fun queueSize(ctx: Context): Int = JSONArray(prefs(ctx).getString("queue", "[]")).length()
-
-  /** Queues one notification message unless it was already seen (apps re-post a chat's history). */
-  @Synchronized
-  fun add(ctx: Context, source: String, sender: String?, text: String) {
-    val key = "$source|${sender ?: ""}|$text".hashCode().toString()
-    val now = System.currentTimeMillis()
-    val p = prefs(ctx)
-    val seen = JSONObject(p.getString("seen", "{}"))
-    if (seen.has(key)) return
-    // Forget old entries so the map stays small.
-    val pruned = JSONObject()
-    seen.keys().forEach { k -> if (now - seen.optLong(k) < SEEN_TTL_MS) pruned.put(k, seen.optLong(k)) }
-    pruned.put(key, now)
-
-    val queue = JSONArray(p.getString("queue", "[]"))
-    queue.put(JSONObject().put("source", source).put("sender", sender ?: "").put("text", text).put("mode", "notification").put("attempts", 0))
-    while (queue.length() > MAX_QUEUE) queue.remove(0)
-    p.edit().putString("seen", pruned.toString()).putString("queue", queue.toString()).apply()
-  }
 
   /** Sends what is queued, oldest first; stops at the first failure to retry later. */
   fun flush(ctx: Context) {
@@ -86,6 +65,7 @@ object CaptureStore {
   fun sendNow(ctx: Context, text: String) {
     val app = ctx.applicationContext
     toast(app, "جارٍ تحليل الرسالة…")
+    flush(app) // earlier messages that failed go first (same single thread)
     io.execute {
       val item = JSONObject().put("source", "whatsapp").put("sender", "").put("text", text).put("mode", "capture")
       val msg = when (post(app, item)) {
