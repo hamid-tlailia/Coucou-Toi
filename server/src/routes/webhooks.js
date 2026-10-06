@@ -45,18 +45,24 @@ router.get('/tiktok', (req, res) => res.sendStatus(200));
  * so local development without a Meta app configured still works.
  * ============================================================ */
 function verifyMetaSignature(req, res, next) {
-  const secret = process.env.META_APP_SECRET;
-  if (!secret) {
+  // Instagram API with Instagram Login signs with its own "Instagram app secret".
+  const secrets = [process.env.META_APP_SECRET, process.env.INSTAGRAM_APP_SECRET].filter(Boolean);
+  if (!secrets.length) {
     console.warn('META_APP_SECRET not set — skipping webhook signature verification');
     return next();
   }
   const signature = req.headers['x-hub-signature-256'];
   if (!signature || !req.rawBody) return res.sendStatus(401);
 
-  const expected = 'sha256=' + crypto.createHmac('sha256', secret).update(req.rawBody).digest('hex');
   const a = Buffer.from(signature);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return res.sendStatus(401);
+  const ok = secrets.some((secret) => {
+    const b = Buffer.from('sha256=' + crypto.createHmac('sha256', secret).update(req.rawBody).digest('hex'));
+    return a.length === b.length && crypto.timingSafeEqual(a, b);
+  });
+  if (!ok) {
+    console.warn('webhook signature mismatch on', req.originalUrl);
+    return res.sendStatus(401);
+  }
   next();
 }
 
@@ -147,7 +153,9 @@ async function profileName(psid, token, fields) {
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 4000);
-    const res = await fetch(`${GRAPH}/${psid}?fields=${fields}&access_token=${encodeURIComponent(token)}`, { signal: ctrl.signal });
+    // Instagram-login tokens ("IG…") live on graph.instagram.com.
+    const host = token.startsWith('IG') ? 'https://graph.instagram.com/v21.0' : GRAPH;
+    const res = await fetch(`${host}/${psid}?fields=${fields}&access_token=${encodeURIComponent(token)}`, { signal: ctrl.signal });
     clearTimeout(timer);
     if (!res.ok) return null;
     const p = await res.json();
