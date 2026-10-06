@@ -27,7 +27,7 @@ app.set('trust proxy', 1);
 
 app.use(helmet());
 app.use(express.json({
-  limit: '2mb', // webhook payloads with base64-ish media metadata run larger than plain order JSON
+  limit: '4mb', // invoice uploads (base64 PDF/photo) and webhook media metadata; Vercel caps bodies at 4.5 MB
   verify: (req, res, buf) => { req.rawBody = buf; }, // needed to check Meta's X-Hub-Signature-256 on /webhooks/*
 }));
 

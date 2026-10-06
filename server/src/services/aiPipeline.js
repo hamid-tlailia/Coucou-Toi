@@ -12,6 +12,7 @@ const EXTRACTION_PROMPT = `أنت مساعد استلام طلبات لمتجر 
 اقرأ رسالة العميل (وقد تكون نص، أو تفريغ رسالة صوتية، أو وصف صورة) واستخرج معلومات الطلب.
 أعد النتيجة بصيغة JSON فقط وفق هذا الشكل بالضبط، بدون أي نص إضافي:
 {
+  "isOrder": true إن كانت الرسالة طلب شراء أو استفسار عن عطر/سعر، و false إن كانت لا علاقة لها بطلب (تحية فقط، كلام عام، نص لا يخص المتجر),
   "customer": "اسم العميل أو null",
   "phone": "رقم الهاتف أو null",
   "city": "المدينة أو null",
@@ -65,10 +66,39 @@ async function transcribeAudio(audioUrl) {
 const MODELS = [...new Set([process.env.GEMINI_MODEL, 'gemini-3.8-flash', 'gemini-flash-latest', 'gemini-flash-lite-latest'].filter(Boolean))];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/**
+ * One JSON-mode Gemini call with fallbacks. Three passes over the model
+ * list: a busy (503/429) or retired (404) model falls through to the next
+ * one, later passes retry after a pause. Returns the response or null.
+ */
+async function callGemini(parts) {
+  for (const pass of [0, 1, 2]) {
+    if (pass) await sleep(pass * 1500);
+    for (const model of MODELS) {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': process.env.GEMINI_API_KEY },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts }],
+            generationConfig: { responseMimeType: 'application/json', temperature: 0.1 },
+          }),
+        }
+      );
+      if (res.ok) return res.json();
+      const body = await res.text().catch(() => '');
+      console.error(`gemini ${model} failed`, res.status, body.slice(0, 300));
+      if ([400, 401, 403].includes(res.status)) return null; // bad key/request: retrying won't help
+    }
+  }
+  return null;
+}
+
 async function extractOrder({ text, imageUrl }) {
   const empty = (aiStatus) => ({
     customer: null, phone: null, city: null, address: null,
-    items: null, total: null, pay: 'cod', confidence: 0, aiStatus,
+    items: null, total: null, pay: 'cod', confidence: 0, isOrder: null, aiStatus,
   });
 
   if (!process.env.GEMINI_API_KEY) return empty('no_key');
@@ -90,36 +120,17 @@ async function extractOrder({ text, imageUrl }) {
       }
     }
 
-    let data = null;
-    // Two passes over the model list: a busy (503/429) or retired (404) model
-    // falls through to the next one; the second pass retries after a pause.
-    attempts: for (const pass of [0, 1]) {
-    if (pass) await sleep(1500);
-    for (const model of MODELS) {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': process.env.GEMINI_API_KEY },
-          body: JSON.stringify({
-            contents: [{ role: 'user', parts }],
-            generationConfig: { responseMimeType: 'application/json', temperature: 0.1 },
-          }),
-        }
-      );
-      if (res.ok) { data = await res.json(); break attempts; }
-      const body = await res.text().catch(() => '');
-      console.error(`gemini ${model} failed`, res.status, body.slice(0, 300));
-      if ([400, 401, 403].includes(res.status)) break attempts; // bad key/request: retrying won't help
-    }
-    }
+    const data = await callGemini(parts);
     if (!data) return empty('failed');
 
     const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!jsonText) return empty('failed');
 
     const parsed = JSON.parse(jsonText);
+    const hasData = ['customer', 'phone', 'items', 'total'].some((k) => parsed[k] != null && parsed[k] !== '');
     return {
+      // Explicit "not an order", or nothing at all worth a draft.
+      isOrder: parsed.isOrder !== false && hasData,
       customer: parsed.customer || null,
       phone: parsed.phone || null,
       city: parsed.city || null,
@@ -148,4 +159,29 @@ async function processIncomingMessage({ text, audioUrl, imageUrl }) {
   return { ...draft, rawText: combinedText || null };
 }
 
-module.exports = { transcribeAudio, extractOrder, processIncomingMessage };
+/**
+ * Reads the order number off an uploaded invoice (PDF or photo).
+ * Returns { code } — the tracking code / invoice number, or null — or
+ * { error: 'no_key' | 'failed' }.
+ */
+async function readInvoiceCode({ data, mimeType }) {
+  if (!process.env.GEMINI_API_KEY) return { error: 'no_key' };
+  try {
+    const out = await callGemini([
+      { text: `هذه فاتورة طلب من متجر. أعد JSON فقط بالشكل {"invoiceNo": "...", "trackingCode": "..."}.
+invoiceNo: رقم الفاتورة كما هو مطبوع (مثل #A1B2C3) أو null.
+trackingCode: إن وُجد رابط تتبع يحتوي /t/ فضع الجزء الذي بعده، وإلا null.` },
+      { inlineData: { mimeType, data } },
+    ]);
+    const text = out?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) return { error: 'failed' };
+    const parsed = JSON.parse(text);
+    const code = parsed.trackingCode || parsed.invoiceNo;
+    return { code: code ? String(code).trim() : null };
+  } catch (e) {
+    console.error('readInvoiceCode failed', e);
+    return { error: 'failed' };
+  }
+}
+
+module.exports = { transcribeAudio, extractOrder, processIncomingMessage, readInvoiceCode };

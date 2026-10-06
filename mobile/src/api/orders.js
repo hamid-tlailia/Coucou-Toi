@@ -19,6 +19,9 @@ export const deleteOrder = (id) => api(`/orders/${id}`, { method: 'DELETE' });
 
 export const findByCode = (code) => api(`/orders/lookup/${encodeURIComponent(code)}`);
 
+/** Uploaded invoice (base64 PDF/photo) → the order printed on it. */
+export const findByFile = (data, mimeType) => api('/orders/lookup-file', { method: 'POST', body: { data, mimeType } });
+
 export const getDashboard = (days = 14) => api(`/dashboard?days=${days}`);
 
 /** Short, human-friendly order number: last 6 chars of the id. */

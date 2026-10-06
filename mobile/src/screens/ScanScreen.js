@@ -1,10 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, StyleSheet, Animated, ScrollView } from 'react-native';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { CameraView, useCameraPermissions, scanFromURLAsync } from 'expo-camera';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { Ionicons } from '@expo/vector-icons';
 import { usePrefs } from '../context/Prefs';
 import { Txt, Input, Button, Card, Tag, Press, haptic } from '../components/ui';
-import { findByCode, updateOrder, shortNo } from '../api/orders';
+import { findByCode, findByFile, updateOrder, shortNo } from '../api/orders';
 import { formatTND } from '../lib/money';
 import { ltr } from '../lib/orderActions';
 import { GOLD, GREEN, GOLD_GRAD, STATUS_COLORS, PAY_COLORS } from '../theme';
@@ -27,6 +30,7 @@ export default function ScanScreen({ onOpenOrder, onChanged }) {
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState('');
+  const [reading, setReading] = useState(false);
   const lock = useRef(false);
   const line = useRef(new Animated.Value(0)).current;
 
@@ -50,6 +54,44 @@ export default function ScanScreen({ onOpenOrder, onChanged }) {
       setResult(null);
       setError(t.notFound);
       haptic('error');
+    }
+  };
+
+  // Invoice from the phone (PDF or photo/screenshot): a photo's QR is read on
+  // the device; otherwise the server reads the order number off the file.
+  const uploadInvoice = async () => {
+    const pick = await DocumentPicker.getDocumentAsync({ type: ['application/pdf', 'image/*'], copyToCacheDirectory: true });
+    if (pick.canceled || !pick.assets?.[0]) return;
+    const file = pick.assets[0];
+    const isPdf = /pdf/i.test(file.mimeType || '') || /\.pdf$/i.test(file.name || '');
+    setReading(true);
+    setError('');
+    setResult(null);
+    try {
+      if (!isPdf) {
+        const found = await scanFromURLAsync(file.uri, ['qr']).catch(() => []);
+        if (found?.length) { await lookup(found[0].data); return; }
+      }
+      let data;
+      let mimeType;
+      if (isPdf) {
+        if (file.size > 2_800_000) throw Object.assign(new Error(), { code: 'too_big' });
+        data = await FileSystem.readAsStringAsync(file.uri, { encoding: FileSystem.EncodingType.Base64 });
+        mimeType = 'application/pdf';
+      } else {
+        const img = await ImageManipulator.manipulateAsync(file.uri, [{ resize: { width: 1400 } }],
+          { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG, base64: true });
+        data = img.base64;
+        mimeType = 'image/jpeg';
+      }
+      setResult(await findByFile(data, mimeType));
+      haptic('success');
+    } catch (e) {
+      const msg = { too_big: t.fileTooBig, no_code: t.invoiceNoCode, ai_busy: t.aiBusy, ai_no_key: t.aiNoKey, network: t.offline }[e.code];
+      setError(msg || t.notFound);
+      haptic('error');
+    } finally {
+      setReading(false);
     }
   };
 
@@ -105,6 +147,9 @@ export default function ScanScreen({ onOpenOrder, onChanged }) {
           </LinearGradient>
         </Press>
       </View>
+
+      <Button variant="outline" icon="document-attach-outline" title={reading ? t.readingInvoice : t.uploadInvoice}
+        loading={reading} onPress={uploadInvoice} style={{ marginTop: 12 }} />
 
       {!!error && <Txt w="b" color="#E0655B" style={{ textAlign: 'center', marginTop: 14 }}>{error}</Txt>}
 

@@ -37,6 +37,10 @@ const fromTextSchema = z.object({
 
 router.post('/from-text', validate(fromTextSchema), async (req, res) => {
   const draft = await processIncomingMessage({ text: req.body.text });
+  // Pasted/shared by the admin, who is right there: say what went wrong
+  // instead of filing an empty draft.
+  if (draft.aiStatus === 'failed') return res.status(503).json({ error: 'ai_busy' });
+  if (draft.aiStatus === 'ok' && !draft.isOrder) return res.status(422).json({ error: 'not_order' });
   const pending = await prisma.pendingOrder.create({
     data: {
       userId: req.user.id,

@@ -7,7 +7,6 @@ import { usePrefs } from '../context/Prefs';
 import { Txt, Card, Input, Button, Press, haptic } from '../components/ui';
 import { updateMe, sendTestNotification } from '../api/account';
 import { isAppLockEnabled, setAppLockEnabled, requireBiometricUnlock } from '../lib/appLock';
-import { API_URL } from '../config';
 import { GOLD, GREEN, RED, CLEAR } from '../theme';
 
 export default function ProfileScreen({ pushMode, onEnablePush }) {
@@ -82,7 +81,6 @@ export default function ProfileScreen({ pushMode, onEnablePush }) {
         }}>
           <Row icon="paper-plane-outline" label={t.testNotif} right={<Ionicons name="chevron-back" size={18} color={th.muted} />} />
         </Press>
-        <Row icon="server-outline" label={t.server} right={<Txt size={11.5} color={th.faint} numberOfLines={1} style={{ maxWidth: 170 }}>{API_URL.replace(/^https?:\/\//, '')}</Txt>} />
         <Row icon="information-circle-outline" label={t.version} right={<Txt size={13} color={th.faint}>{Constants.expoConfig?.version}</Txt>} last />
       </Card>
 

@@ -100,8 +100,11 @@ export function Ring({ pct, size = 92, stroke = 9, color, label, sub }) {
             strokeDasharray={`${c * p} ${c}`} strokeLinecap="round" />
         </Svg>
       </View>
-      <Txt w="x" size={18}>{label}</Txt>
-      {!!sub && <Txt size={10} color={th.muted}>{sub}</Txt>}
+      {/* Kept inside the ring's hole whatever the text length. */}
+      <View style={{ width: size - stroke * 2 - 12, alignItems: 'center' }}>
+        <Txt w="x" size={18} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5} style={{ textAlign: 'center' }}>{label}</Txt>
+        {!!sub && <Txt size={10} color={th.muted} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{ textAlign: 'center' }}>{sub}</Txt>}
+      </View>
     </View>
   );
 }

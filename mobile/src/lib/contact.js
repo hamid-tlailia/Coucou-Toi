@@ -2,6 +2,7 @@ import { Linking, Platform } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import * as IntentLauncher from 'expo-intent-launcher';
 import { waNumber } from './orderActions';
+import { markClipSeen } from './copiedMessage';
 
 // Android packages of each app (first installed one wins), then a web fallback.
 const APPS = {
@@ -43,6 +44,7 @@ export async function messageCustomer(order, message, via = order.source) {
     return 'whatsapp';
   }
   await Clipboard.setStringAsync(message);
+  markClipSeen(message); // our own text: don't offer it back for analysis
   await openApp(via);
   return 'copied';
 }

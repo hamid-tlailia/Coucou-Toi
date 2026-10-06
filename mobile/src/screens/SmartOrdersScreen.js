@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, FlatList, RefreshControl, ScrollView } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
+import { markClipSeen } from '../lib/copiedMessage';
 import { Ionicons } from '@expo/vector-icons';
 import { usePrefs } from '../context/Prefs';
 import StockAlert from '../components/StockAlert';
@@ -43,7 +44,10 @@ export default function SmartOrdersScreen({ refreshKey, shared, onApproved, onCo
       const msg = { ok: t.draftCreated, no_key: t.aiNoKey, failed: t.aiFailed }[draft.aiStatus] || t.draftCreated;
       showToast(msg, draft.aiStatus === 'ok' ? 'ok' : 'info');
     } catch (e) {
-      showToast(e.code === 'network' ? t.offline : t.error, 'error');
+      // The text stays in the box, so a busy AI can simply be retried.
+      const msg = { not_order: t.notOrder, ai_busy: t.aiBusy, network: t.offline }[e.code] || t.error;
+      haptic(e.code === 'not_order' ? 'medium' : 'error');
+      showToast(msg, e.code === 'not_order' ? 'info' : 'error');
     } finally {
       setExtracting(false);
     }
@@ -99,7 +103,7 @@ export default function SmartOrdersScreen({ refreshKey, shared, onApproved, onCo
         <Input multiline placeholder={t.pastePlaceholder} value={text} onChangeText={setText} style={{ marginTop: 12 }} />
         <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
           <Button small variant="ghost" icon="clipboard-outline" title={t.paste} style={{ flex: 0.4 }}
-            onPress={async () => setText(await Clipboard.getStringAsync())} />
+            onPress={async () => { const s = await Clipboard.getStringAsync(); markClipSeen(s); setText(s); }} />
           <Button small icon="sparkles-outline" title={extracting ? t.extracting : t.extract} loading={extracting}
             disabled={text.trim().length < 3} onPress={() => extract()} style={{ flex: 0.6 }} />
         </View>

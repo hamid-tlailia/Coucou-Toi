@@ -12,6 +12,7 @@ import { listOrders } from '../api/orders';
 import { registerForNotifications, showLocalNotification, onNotificationTap, onNotificationReceived, setBadge } from '../lib/push';
 
 import useSharedText from '../lib/useSharedText';
+import useCopiedMessage, { markClipSeen } from '../lib/copiedMessage';
 import DashboardScreen from '../screens/DashboardScreen';
 import OrdersScreen from '../screens/OrdersScreen';
 import SmartOrdersScreen from '../screens/SmartOrdersScreen';
@@ -66,7 +67,10 @@ export default function AppShell() {
   }, []);
 
   // Share menu → Assistant tab, analysed right away.
-  useSharedText((text) => { setShared({ text, at: Date.now() }); go('smart'); });
+  const analyse = useCallback((text) => { markClipSeen(text); setShared({ text, at: Date.now() }); go('smart'); }, [go]);
+  useSharedText(analyse);
+  // Message copied in WhatsApp/Instagram/… → offered here on return.
+  const [copied, dismissCopied] = useCopiedMessage();
 
   /* ---------- notifications ---------- */
   const poll = useCallback(async () => {
@@ -205,6 +209,25 @@ export default function AppShell() {
         </Press>
       )}
 
+      {!!copied && (
+        <View style={[styles.clip, { bottom: insets.bottom + (showFab ? 164 : 92), backgroundColor: th.bg, borderColor: th.border }, shadow(12)]}>
+          <View style={[styles.clipIcon, { backgroundColor: `${th.accent}22` }]}>
+            <Ionicons name="clipboard-outline" size={20} color={th.accent} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Txt w="b" size={13.5}>{t.clipFound}</Txt>
+            <Txt size={12} color={th.muted} numberOfLines={1}>{copied.replace(/\s+/g, ' ')}</Txt>
+          </View>
+          <Press onPress={() => { const s = copied; dismissCopied(); analyse(s); }} hapticKind="medium" style={styles.clipBtn}>
+            <LinearGradient colors={GOLD_GRAD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.clipBtnInner}>
+              <Ionicons name="sparkles" size={15} color="#1A1214" />
+              <Txt w="b" size={13} color="#1A1214">{t.clipAnalyze}</Txt>
+            </LinearGradient>
+          </Press>
+          <IconBtn icon="close" size={34} onPress={dismissCopied} />
+        </View>
+      )}
+
       {/* Floating tab bar */}
       <View style={[styles.tabBar, { bottom: insets.bottom + 12, backgroundColor: mode === 'dark' ? '#1E1523' : '#FFFFFF', borderColor: th.border }, shadow(12)]}>
         {TABS.map((tb) => {
@@ -246,6 +269,10 @@ const styles = StyleSheet.create({
   fab: { position: 'absolute', alignSelf: 'center', borderRadius: 24 },
   fabInner: { width: 62, height: 62, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   tabBar: { position: 'absolute', left: 12, right: 12, flexDirection: 'row', borderRadius: 30, paddingTop: 9, paddingBottom: 8, paddingHorizontal: 6, borderWidth: 1 },
+  clip: { position: 'absolute', left: 14, right: 14, flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderRadius: 22, borderWidth: 1 },
+  clipIcon: { width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  clipBtn: { borderRadius: 14 },
+  clipBtnInner: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 14 },
   tabItem: { flex: 1, alignItems: 'center', gap: 4, marginHorizontal: 2 },
   tabIcon: { width: 52, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   tabBadge: { position: 'absolute', top: -3, right: 2, minWidth: 17, height: 17, borderRadius: 9, backgroundColor: RED, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },

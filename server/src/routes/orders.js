@@ -6,6 +6,7 @@ const { validate } = require('../middleware/validate');
 const { withQuota } = require('../middleware/quota');
 const { trackingCode } = require('../lib/tracking');
 const { annotate } = require('../lib/stock');
+const { readInvoiceCode } = require('../services/aiPipeline');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -56,13 +57,31 @@ router.get('/stats', async (req, res) => {
 });
 
 // Exact lookup by tracking code (scanner flow) — scoped to the caller's own orders.
+async function findByTerm(userId, raw) {
+  const term = String(raw).trim().replace(/^#/, '');
+  const order = await prisma.order.findFirst({ where: { userId, code: term } });
+  if (order || term.length < 4) return order;
+  // Typed by hand / read off a PDF: the short order number printed on the invoice.
+  return prisma.order.findFirst({ where: { userId, id: { endsWith: term.toLowerCase() } } });
+}
+
 router.get('/lookup/:code', async (req, res) => {
-  const term = req.params.code.trim().replace(/^#/, '');
-  let order = await prisma.order.findFirst({ where: { userId: req.user.id, code: term } });
-  // Typed by hand: accept the short order number printed on the invoice.
-  if (!order && term.length >= 4) {
-    order = await prisma.order.findFirst({ where: { userId: req.user.id, id: { endsWith: term.toLowerCase() } } });
-  }
+  const order = await findByTerm(req.user.id, req.params.code);
+  if (!order) return res.status(404).json({ error: 'not_found' });
+  res.json((await annotate([serialize(order)]))[0]);
+});
+
+// Uploaded invoice (PDF or photo): read the order number off it, then look up.
+const fileSchema = z.object({
+  data: z.string().min(10).max(4_000_000),
+  mimeType: z.enum(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']),
+});
+
+router.post('/lookup-file', validate(fileSchema), async (req, res) => {
+  const { code, error } = await readInvoiceCode(req.body);
+  if (error) return res.status(503).json({ error: error === 'no_key' ? 'ai_no_key' : 'ai_busy' });
+  if (!code) return res.status(404).json({ error: 'no_code' });
+  const order = await findByTerm(req.user.id, code);
   if (!order) return res.status(404).json({ error: 'not_found' });
   res.json((await annotate([serialize(order)]))[0]);
 });
