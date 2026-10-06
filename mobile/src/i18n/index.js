@@ -57,6 +57,10 @@ const ar = {
   pushOn: 'مفعّلة', pushOff: 'غير مفعّلة', pushLocal: 'مفعّلة داخل التطبيق', testNotif: 'إرسال إشعار تجريبي', pickProducts: 'اختر العطور', notOnSite: 'غير متوفر بالموقع',
   outOfStockTitle: 'عطر غير متوفر حالياً على الموقع', unavailableTag: 'غير متوفر', notifyWa: 'إبلاغ عبر واتساب', notifyCopy: 'نسخ وفتح الرسائل',
   msgCopied: 'تم نسخ الرسالة — الصقها في محادثة العميل', cartUnavailable: 'بعض العطور المختارة غير متوفرة حالياً على الموقع',
+  tellCustomerStatus: 'أبلغ العميل: طلبه الآن «{status}»',
+  statusMsg_processing: 'مرحباً {name} 🌸\nطلبك {no} من {store} قيد التجهيز الآن ✨\nتابع طلبك من هنا: {link}',
+  statusMsg_shipped: 'مرحباً {name} 🌸\nتم شحن طلبك {no} من {store} 🚚 وسيصلك قريباً.\nتابع طلبك من هنا: {link}',
+  statusMsg_delivered: 'مرحباً {name} 🌸\nتم تسليم طلبك {no} بنجاح ✅\nشكراً لثقتك بـ {store} 🤍',
   stockMsg: 'مرحباً {name} 🌸\nنعتذر منك، عطر {items} غير متوفر حالياً.\n\nالعطور المتوفرة الآن:\n{available}\n\nهل تحب تختار عطراً من المتوفر، أم تفضّل الانتظار حتى يعود؟ 🤍', testSent: 'تم الإرسال — سيصلك الإشعار خلال ثوانٍ', logout: 'تسجيل الخروج', server: 'الخادم', version: 'الإصدار',
   timeAgoNow: 'الآن', minutes: 'د', hours: 'س',
 };
@@ -108,6 +112,10 @@ const en = {
   pushOn: 'On', pushOff: 'Off', pushLocal: 'In-app only', testNotif: 'Send a test notification', pickProducts: 'Pick perfumes', notOnSite: 'Sold out online',
   outOfStockTitle: 'Perfume currently sold out online', unavailableTag: 'Sold out', notifyWa: 'Tell on WhatsApp', notifyCopy: 'Copy & open inbox',
   msgCopied: 'Message copied — paste it in the customer chat', cartUnavailable: 'Some selected perfumes are sold out online',
+  tellCustomerStatus: 'Tell the customer: order is now “{status}”',
+  statusMsg_processing: 'Hello {name} 🌸\nYour order {no} from {store} is being prepared ✨\nTrack it here: {link}',
+  statusMsg_shipped: 'Hello {name} 🌸\nYour order {no} from {store} has shipped 🚚\nTrack it here: {link}',
+  statusMsg_delivered: 'Hello {name} 🌸\nYour order {no} was delivered ✅\nThank you for trusting {store} 🤍',
   stockMsg: 'Hello {name} 🌸\nSorry, {items} is currently out of stock.\n\nAvailable now:\n{available}\n\nWould you like to pick an available perfume, or wait until it is back? 🤍', testSent: 'Sent — it should arrive in a few seconds', logout: 'Sign out', server: 'Server', version: 'Version',
   timeAgoNow: 'now', minutes: 'm', hours: 'h',
 };

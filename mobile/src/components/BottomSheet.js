@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Modal, View, Pressable, Animated, StyleSheet, Dimensions, ScrollView, PanResponder, Keyboard, Platform } from 'react-native';
+import { Modal, View, Pressable, Animated, StyleSheet, Dimensions, ScrollView, PanResponder, Keyboard, Platform, StatusBar } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePrefs } from '../context/Prefs';
 import { Txt } from './ui';
@@ -88,7 +88,9 @@ export default function BottomSheet({ visible, onClose, title, children, scroll 
 
   // How much of our window the keyboard covers (0 if Android already resized it).
   const overlap = kbTop == null ? 0 : Math.max(0, rootH - kbTop);
-  const maxH = Math.max(220, rootH - overlap - insets.top - 12);
+  // Keep clear of the status bar (inside a Modal the inset can read as 0).
+  const topGap = Math.max(insets.top, StatusBar.currentHeight || 0, 24) + 16;
+  const maxH = Math.max(220, rootH - overlap - topGap);
 
   return (
     <Modal visible transparent animationType="none" onRequestClose={onClose} onShow={animateIn} statusBarTranslucent>

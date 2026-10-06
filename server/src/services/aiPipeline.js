@@ -62,7 +62,8 @@ async function transcribeAudio(audioUrl) {
  */
 // Tried in order; the first model the key has access to wins. Lets the app
 // keep working when Google retires a model name.
-const MODELS = [...new Set([process.env.GEMINI_MODEL, 'gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.0-flash'].filter(Boolean))];
+const MODELS = [...new Set([process.env.GEMINI_MODEL, 'gemini-3.8-flash', 'gemini-flash-latest', 'gemini-flash-lite-latest'].filter(Boolean))];
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function extractOrder({ text, imageUrl }) {
   const empty = (aiStatus) => ({
@@ -90,6 +91,10 @@ async function extractOrder({ text, imageUrl }) {
     }
 
     let data = null;
+    // Two passes over the model list: a busy (503/429) or retired (404) model
+    // falls through to the next one; the second pass retries after a pause.
+    attempts: for (const pass of [0, 1]) {
+    if (pass) await sleep(1500);
     for (const model of MODELS) {
       const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
@@ -102,10 +107,11 @@ async function extractOrder({ text, imageUrl }) {
           }),
         }
       );
-      if (res.ok) { data = await res.json(); break; }
+      if (res.ok) { data = await res.json(); break attempts; }
       const body = await res.text().catch(() => '');
       console.error(`gemini ${model} failed`, res.status, body.slice(0, 300));
-      if (res.status !== 404) break; // bad key / quota: other models won't help
+      if ([400, 401, 403].includes(res.status)) break attempts; // bad key/request: retrying won't help
+    }
     }
     if (!data) return empty('failed');
 

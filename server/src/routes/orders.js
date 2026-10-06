@@ -118,6 +118,7 @@ const patchSchema = z.object({
   city: z.string().trim().max(120).optional(),
   items: z.string().trim().max(500).optional(),
   total: z.number().nonnegative().max(1_000_000).optional(),
+  source: z.enum(['whatsapp', 'instagram', 'facebook', 'tiktok', 'manual']).optional(),
 });
 
 router.patch('/:id', validate(patchSchema), async (req, res) => {

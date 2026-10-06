@@ -208,12 +208,12 @@ export default function DashboardScreen({ refreshKey, goTo }) {
 function Tile({ icon, color, label, value }) {
   const { th } = usePrefs();
   return (
-    <View style={{ width: '48.4%', backgroundColor: th.surface, borderRadius: 20, padding: 14, borderWidth: 1, borderColor: th.border }}>
-      <View style={{ width: 34, height: 34, borderRadius: 11, backgroundColor: `${color}22`, alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
-        <Ionicons name={icon} size={18} color={color} />
+    <View style={{ width: '48.4%', backgroundColor: th.surface, borderRadius: 20, paddingVertical: 16, paddingHorizontal: 12, borderWidth: 1, borderColor: th.border, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ width: 40, height: 40, borderRadius: 13, backgroundColor: `${color}22`, alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+        <Ionicons name={icon} size={20} color={color} />
       </View>
-      <Txt w="x" size={20} numberOfLines={1} adjustsFontSizeToFit>{value}</Txt>
-      <Txt size={12} color={th.muted} style={{ marginTop: 2 }}>{label}</Txt>
+      <Txt w="x" size={22} numberOfLines={1} adjustsFontSizeToFit style={{ textAlign: 'center' }}>{value}</Txt>
+      <Txt size={12} color={th.muted} style={{ marginTop: 2, textAlign: 'center' }}>{label}</Txt>
     </View>
   );
 }
@@ -242,12 +242,12 @@ function Mini({ label, value, color }) {
 function Legend({ color, label, value }) {
   const { th } = usePrefs();
   return (
-    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: th.raised, borderRadius: 14, padding: 10 }}>
-      <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: color }} />
-      <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, alignItems: 'center', backgroundColor: th.raised, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 8 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: color }} />
         <Txt size={11.5} color={th.muted}>{label}</Txt>
-        <Txt w="x" size={16}>{value}</Txt>
       </View>
+      <Txt w="x" size={18} style={{ marginTop: 4 }}>{value}</Txt>
     </View>
   );
 }

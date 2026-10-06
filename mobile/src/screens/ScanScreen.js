@@ -9,6 +9,7 @@ import { formatTND } from '../lib/money';
 import { ltr } from '../lib/orderActions';
 import { GOLD, GREEN, GOLD_GRAD, STATUS_COLORS, PAY_COLORS } from '../theme';
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Path } from 'react-native-svg';
 
 /** Pulls the order code out of whatever the QR contains. */
 function codeFrom(data) {
@@ -80,8 +81,8 @@ export default function ScanScreen({ onOpenOrder, onChanged }) {
           <>
             <CameraView style={StyleSheet.absoluteFill} barcodeScannerSettings={{ barcodeTypes: ['qr', 'code128'] }}
               onBarcodeScanned={result ? undefined : onScanned} />
-            <View pointerEvents="none" style={[styles.frameWrap, { direction: 'ltr' }]}>
-              {[styles.tl, styles.tr, styles.bl, styles.br].map((s, i) => <View key={i} style={[styles.corner, s]} />)}
+            <View pointerEvents="none" style={styles.frameWrap}>
+              <FrameCorners />
               <Animated.View style={[styles.line, { transform: [{ translateY: line.interpolate({ inputRange: [0, 1], outputRange: [0, 190] }) }] }]} />
             </View>
           </>
@@ -134,6 +135,30 @@ export default function ScanScreen({ onOpenOrder, onChanged }) {
         </Card>
       )}
     </ScrollView>
+  );
+}
+
+// Corners drawn as SVG paths: absolute coordinates, so RTL layout can't mirror them.
+function FrameCorners() {
+  const [size, setSize] = useState(null);
+  const L = 26, R = 14, W = 4, h = W / 2;
+  const paths = size && (() => {
+    const { w, hgt } = size;
+    return [
+      `M${h},${L} V${R} Q${h},${h} ${R},${h} H${L}`,                                  // top-left
+      `M${w - L},${h} H${w - R} Q${w - h},${h} ${w - h},${R} V${L}`,                  // top-right
+      `M${h},${hgt - L} V${hgt - R} Q${h},${hgt - h} ${R},${hgt - h} H${L}`,          // bottom-left
+      `M${w - L},${hgt - h} H${w - R} Q${w - h},${hgt - h} ${w - h},${hgt - R} V${hgt - L}`, // bottom-right
+    ];
+  })();
+  return (
+    <View style={StyleSheet.absoluteFill} onLayout={(e) => setSize({ w: e.nativeEvent.layout.width, hgt: e.nativeEvent.layout.height })}>
+      {paths && (
+        <Svg width={size.w} height={size.hgt}>
+          {paths.map((d, i) => <Path key={i} d={d} stroke={GOLD} strokeWidth={W} fill="none" strokeLinecap="round" />)}
+        </Svg>
+      )}
+    </View>
   );
 }
 

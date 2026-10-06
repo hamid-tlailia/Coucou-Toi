@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Alert } from 'react-native';
+import { View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
 import BottomSheet from '../components/BottomSheet';
 import StockAlert from '../components/StockAlert';
+import ConfirmModal from '../components/ConfirmModal';
+import { messageCustomer, isSocial } from '../lib/contact';
+import { fill } from '../i18n';
 import { usePrefs } from '../context/Prefs';
+import { useAuth } from '../auth/AuthContext';
 import { Txt, Press, Chip, Button, Divider, haptic } from '../components/ui';
 import { STATUS_KEYS, STATUS_COLORS, PAY_KEYS, PAY_COLORS, srcOf, GREEN } from '../theme';
 import { formatTND } from '../lib/money';
@@ -15,8 +19,11 @@ import { trackingUrl } from '../config';
 /** Full order view: change status/payment, invoice, contact, edit, delete. */
 export default function OrderSheet({ order: initial, onClose, onChanged, onInvoice, onEdit }) {
   const { t, th, showToast } = usePrefs();
+  const { user } = useAuth();
   const [order, setOrder] = useState(initial);
-  useEffect(() => { if (initial) setOrder(initial); }, [initial]);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [notice, setNotice] = useState(null); // status the customer can be told about
+  useEffect(() => { if (initial) { setOrder(initial); setNotice(null); } }, [initial]);
 
   if (!order) return <BottomSheet visible={false} onClose={onClose} />;
   const src = srcOf(order.source);
@@ -30,18 +37,27 @@ export default function OrderSheet({ order: initial, onClose, onChanged, onInvoi
       setOrder(updated);
       onChanged?.(updated);
       haptic('success');
+      if (p.status && p.status !== 'new') setNotice(p.status);
     } catch {
       setOrder(before);
       showToast(t.error, 'error');
     }
   };
 
-  const remove = () => Alert.alert(t.deleteOrder, t.deleteConfirm, [
-    { text: t.cancel, style: 'cancel' },
-    { text: t.delete, style: 'destructive', onPress: async () => {
-      try { await deleteOrder(order.id); showToast(t.deleted); onChanged?.(null); onClose(); } catch { showToast(t.error, 'error'); }
-    } },
-  ]);
+  const remove = () => setConfirmDelete(true);
+  const doDelete = async () => {
+    setConfirmDelete(false);
+    try { await deleteOrder(order.id); showToast(t.deleted); onChanged?.(null); onClose(); } catch { showToast(t.error, 'error'); }
+  };
+
+  const tellCustomer = (via) => async () => {
+    const msg = fill(t[`statusMsg_${notice}`], { name: order.customer, no: shortNo(order), link: trackingUrl(order.code), store: user?.store || t.appName });
+    try {
+      const r = await messageCustomer(order, msg, via);
+      if (r === 'copied') showToast(t.msgCopied, 'info');
+      setNotice(null);
+    } catch { showToast(t.error, 'error'); }
+  };
 
   const copyLink = async () => { await Clipboard.setStringAsync(trackingUrl(order.code)); showToast(t.copied); };
 
@@ -86,6 +102,22 @@ export default function OrderSheet({ order: initial, onClose, onChanged, onInvoi
         })}
       </View>
 
+      {!!notice && (
+        <View style={{ marginTop: 14, padding: 12, borderRadius: 16, backgroundColor: `${STATUS_COLORS[notice]}18`, borderWidth: 1, borderColor: `${STATUS_COLORS[notice]}55` }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Ionicons name="megaphone-outline" size={18} color={STATUS_COLORS[notice]} />
+            <Txt w="b" size={13.5} style={{ flex: 1 }}>{fill(t.tellCustomerStatus, { status: t[`st_${notice}`] })}</Txt>
+            <Press onPress={() => setNotice(null)} hapticKind={null} style={{ padding: 4 }}>
+              <Ionicons name="close" size={18} color={th.muted} />
+            </Press>
+          </View>
+          <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
+            {!!order.phone && <Button small variant="dark" icon="logo-whatsapp" title={t.src_whatsapp} onPress={tellCustomer('whatsapp')} style={{ flex: 1 }} />}
+            {isSocial(order.source) && <Button small variant="ghost" icon={src.icon} title={t[`src_${order.source}`]} onPress={tellCustomer(order.source)} style={{ flex: 1 }} />}
+          </View>
+        </View>
+      )}
+
       <Txt w="b" size={13} color={th.muted} style={{ marginTop: 18, marginBottom: 10 }}>{t.payStatus}</Txt>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 8 }}>
         {PAY_KEYS.map((p) => (
@@ -112,6 +144,8 @@ export default function OrderSheet({ order: initial, onClose, onChanged, onInvoi
         <Button title={t.edit} icon="create-outline" variant="ghost" onPress={() => onEdit(order)} style={{ flex: 1 }} small />
         <Button title={t.delete} icon="trash-outline" variant="danger" onPress={remove} style={{ flex: 1 }} small />
       </View>
+      <ConfirmModal visible={confirmDelete} danger icon="trash-outline" title={t.deleteOrder} message={t.deleteConfirm}
+        confirmLabel={t.delete} cancelLabel={t.cancel} onConfirm={doDelete} onCancel={() => setConfirmDelete(false)} />
     </BottomSheet>
   );
 }

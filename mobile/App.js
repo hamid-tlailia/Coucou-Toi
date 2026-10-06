@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { View, AppState, Image, ActivityIndicator, Platform } from 'react-native';
+import { View, Image, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts, Tajawal_400Regular, Tajawal_500Medium, Tajawal_700Bold, Tajawal_800ExtraBold } from '@expo-google-fonts/tajawal';
@@ -51,7 +51,7 @@ function Root() {
   const { user, booting, bootError, retryBoot } = useAuth();
   const { t } = usePrefs();
   const [locked, setLocked] = useState(false);
-  const appState = useRef(AppState.currentState);
+  const lockChecked = useRef(false);
 
   const checkLock = useCallback(async () => {
     if (!user || !(await isAppLockEnabled())) return;
@@ -59,16 +59,14 @@ function Root() {
     setLocked(!(await requireBiometricUnlock(t)));
   }, [user]);
 
-  useEffect(() => { checkLock(); }, [checkLock]);
-
-  // Re-lock when the app comes back from the background (banking-app style).
+  // Fingerprint only when the app is opened — not when returning from the
+  // share sheet, WhatsApp, a dialog… (that would also reset the screen).
   useEffect(() => {
-    const sub = AppState.addEventListener('change', (next) => {
-      if (appState.current === 'background' && next === 'active') checkLock();
-      appState.current = next;
-    });
-    return () => sub.remove();
-  }, [checkLock]);
+    if (user && !lockChecked.current) {
+      lockChecked.current = true;
+      checkLock();
+    }
+  }, [user, checkLock]);
 
   if (booting) return <Splash />;
 

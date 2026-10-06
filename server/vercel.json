@@ -16,5 +16,8 @@
       "path": "/catalog/cron",
       "schedule": "0 8 * * *"
     }
+  ],
+  "regions": [
+    "fra1"
   ]
 }

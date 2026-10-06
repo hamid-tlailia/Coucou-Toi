@@ -12,6 +12,26 @@ export const cartText = (cart) => cart.map((l) => `${l.name} ×${l.qty}`).join('
 export const cartTotal = (cart) => cart.reduce((s, l) => s + l.price * l.qty, 0);
 
 /**
+ * Reads an order's products text back into a cart (lines like "NAME ×2").
+ * Lines that don't match a catalog product are returned as `extra` so they
+ * are kept when the text is regenerated.
+ */
+export function parseCart(itemsText, catalog) {
+  const cart = [];
+  const extra = [];
+  for (const raw of String(itemsText || '').split('\n')) {
+    const line = raw.trim();
+    if (!line) continue;
+    const m = line.match(/^(.*?)\s*[×xX]\s*(\d+)$/);
+    const name = (m ? m[1] : line).trim().toUpperCase();
+    const p = catalog.find((c) => c.name === name);
+    if (p) cart.push({ id: p.id, name: p.name, price: p.price, qty: m ? Number(m[2]) : 1, available: p.available });
+    else extra.push(line);
+  }
+  return { cart, extra };
+}
+
+/**
  * Perfume picker for the order form: tap a product to add it, adjust the
  * quantity, and the parent fills in the products text and total from it.
  * Products and prices come live from the store's website.

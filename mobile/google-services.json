@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "314744724174",
+    "project_id": "coucoutoi-81b3e",
+    "storage_bucket": "coucoutoi-81b3e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:314744724174:android:76723c99d635f369964e9f",
+        "android_client_info": {
+          "package_name": "com.cocolove.orders"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCkZXjNJ1OBZLuOo4uE_wLKthXO9FVpeBw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

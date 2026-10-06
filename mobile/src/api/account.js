@@ -3,6 +3,7 @@ import { api } from './client';
 export const updateMe = (patch) => api('/me', { method: 'PATCH', body: patch });
 
 export const listNotifications = () => api('/notifications');
+export const markRead = (id) => api(`/notifications/${id}/read`, { method: 'POST' });
 export const markAllRead = () => api('/notifications/read-all', { method: 'POST' });
 export const savePushToken = (token) => api('/notifications/push-token', { method: 'PUT', body: { token } });
 

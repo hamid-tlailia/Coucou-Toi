@@ -30,6 +30,11 @@ router.post('/read-all', async (req, res) => {
   res.json({ ok: true });
 });
 
+router.post('/:id/read', async (req, res) => {
+  await prisma.notification.updateMany({ where: { id: req.params.id, userId: req.user.id, readAt: null }, data: { readAt: new Date() } });
+  res.json({ ok: true });
+});
+
 const tokenSchema = z.object({ token: z.string().trim().max(4096).nullable() });
 
 // Called by the app after the user grants notification permission.

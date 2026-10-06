@@ -7,7 +7,7 @@ import { useAuth } from '../auth/AuthContext';
 import { usePrefs } from '../context/Prefs';
 import { Txt, Press, IconBtn, haptic } from '../components/ui';
 import { GOLD_GRAD, RED, CLEAR, shadow } from '../theme';
-import { listNotifications, markAllRead, logVisit } from '../api/account';
+import { listNotifications, markAllRead, markRead, logVisit } from '../api/account';
 import { listOrders } from '../api/orders';
 import { registerForNotifications, showLocalNotification, onNotificationTap, onNotificationReceived, setBadge } from '../lib/push';
 
@@ -87,6 +87,12 @@ export default function AppShell() {
 
   const openFromNotification = useCallback(async (n) => {
     setNotifOpen(false);
+    // Opening a notification (in the list or from the lock screen) marks it read.
+    const id = n.id || n.notificationId;
+    if (id) {
+      setNotifs((s) => ({ unread: Math.max(0, s.unread - (s.items.find((x) => x.id === id && !x.read) ? 1 : 0)), items: s.items.map((x) => (x.id === id ? { ...x, read: true } : x)) }));
+      markRead(id).then(poll).catch(() => {});
+    }
     if (n.type === 'new_draft') return go('smart');
     if (n.type === 'out_of_stock' || n.type === 'back_in_stock') return go('orders');
     if (n.orderId) {
@@ -140,10 +146,7 @@ export default function AppShell() {
     refresh();
     setTimeout(() => (isNew ? setInvoice(order) : setDetail(order)), 300);
   };
-  const closeNotifs = () => {
-    setNotifOpen(false);
-    if (notifs.unread) markAllRead().then(poll).catch(() => {});
-  };
+  const closeNotifs = () => setNotifOpen(false);
 
   const titles = { home: user.store || t.dashboard, orders: t.tabOrders, smart: t.tabSmart, scan: t.tabScan, profile: t.tabProfile };
   const hour = new Date().getHours();
