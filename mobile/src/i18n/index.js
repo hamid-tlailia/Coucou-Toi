@@ -1,5 +1,3 @@
-import * as Localization from 'expo-localization';
-
 const ar = {
   dir: 'rtl',
   appName: 'Coco Love',
@@ -137,9 +135,9 @@ const fr = {
 
 export const STRINGS = { ar, en, fr };
 
+/** Arabic by default; French/English can be chosen in Settings. */
 export function deviceLang() {
-  const code = Localization.getLocales?.()[0]?.languageCode || 'ar';
-  return STRINGS[code] ? code : 'ar';
+  return 'ar';
 }
 
 /** "{name} ..." template filler for translated sentences. */

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { View, AppState, Image, ActivityIndicator } from 'react-native';
+import { View, AppState, Image, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts, Tajawal_400Regular, Tajawal_500Medium, Tajawal_700Bold, Tajawal_800ExtraBold } from '@expo-google-fonts/tajawal';
@@ -16,8 +16,14 @@ import { GOLD } from './src/theme';
 // hidden on first render, and fonts get at most 3s (system font fallback).
 const FONT_TIMEOUT_MS = 3000;
 
+// Android: fonts are embedded in the APK by the expo-font config plugin
+// (app.json), so nothing is loaded at runtime. iOS still loads them here.
+const RUNTIME_FONTS = Platform.OS === 'android'
+  ? {}
+  : { Tajawal_400Regular, Tajawal_500Medium, Tajawal_700Bold, Tajawal_800ExtraBold, ...Ionicons.font };
+
 export default function App() {
-  const [fontsLoaded, fontError] = useFonts({ Tajawal_400Regular, Tajawal_500Medium, Tajawal_700Bold, Tajawal_800ExtraBold, ...Ionicons.font });
+  const [fontsLoaded, fontError] = useFonts(RUNTIME_FONTS);
   const [timedOut, setTimedOut] = useState(false);
 
   useEffect(() => {
@@ -29,7 +35,7 @@ export default function App() {
   }, []);
 
   if (fontError) console.warn('font loading failed, using system font', fontError);
-  if (!fontsLoaded && !fontError && !timedOut) return <Splash />;
+  if (Platform.OS !== 'android' && !fontsLoaded && !fontError && !timedOut) return <Splash />;
   return (
     <SafeAreaProvider>
       <PrefsProvider>

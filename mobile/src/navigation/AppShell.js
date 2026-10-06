@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { View, StatusBar, Animated, AppState, BackHandler, Image, StyleSheet } from 'react-native';
+import { View, StatusBar, AppState, BackHandler, Image, StyleSheet } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -51,7 +51,6 @@ export default function AppShell() {
   const pushModeRef = useRef(null);
   const lastSeen = useRef(null);
   const lastVisit = useRef(0);
-  const fade = useRef(new Animated.Value(1)).current;
 
   const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
 
@@ -62,8 +61,6 @@ export default function AppShell() {
     haptic('light');
     setVisited((v) => ({ ...v, [key]: true }));
     setTab(key);
-    fade.setValue(0);
-    Animated.timing(fade, { toValue: 1, duration: 200, useNativeDriver: true }).start();
   }, []);
 
   /* ---------- notifications ---------- */
@@ -170,7 +167,7 @@ export default function AppShell() {
       <View style={styles.header}>
         <Image source={require('../../assets/icon.png')} style={{ width: 44, height: 44, borderRadius: 15 }} />
         <View style={{ flex: 1, alignItems: 'flex-start' }}>
-          <Txt size={12.5} color={th.muted}>{tab === 'home' ? `${hour < 17 ? t.goodMorning : t.goodEvening}، ${user.name?.split(' ')[0] || ''}` : user.store}</Txt>
+          <Txt size={12.5} color={th.muted}>{tab === 'home' ? `${hour < 12 ? t.goodMorning : t.goodEvening}، ${user.name?.split(' ')[0] || ''}` : user.store}</Txt>
           <Txt w="x" size={20} numberOfLines={1}>{titles[tab]}</Txt>
         </View>
         <IconBtn icon="notifications-outline" badge={notifs.unread} onPress={() => { poll(); setNotifOpen(true); }} />
@@ -183,9 +180,9 @@ export default function AppShell() {
           if (key === 'scan' && tab !== 'scan') return null;
           const active = key === tab;
           return (
-            <Animated.View key={key} style={[StyleSheet.absoluteFill, active ? { opacity: fade } : { display: 'none' }]}>
+            <View key={key} style={[StyleSheet.absoluteFill, !active && { display: 'none' }]}>
               {screen(key)}
-            </Animated.View>
+            </View>
           );
         })}
       </View>

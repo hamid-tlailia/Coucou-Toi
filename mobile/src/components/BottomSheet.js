@@ -17,14 +17,21 @@ export default function BottomSheet({ visible, onClose, title, children, scroll 
   const y = useRef(new Animated.Value(SCREEN_H)).current;
   const fade = useRef(new Animated.Value(0)).current;
 
+  // The entrance animation starts from Modal's onShow, i.e. once the sheet's
+  // views exist natively — starting it earlier could leave it off-screen.
+  const animateIn = () => {
+    Animated.parallel([
+      Animated.timing(fade, { toValue: 1, duration: 200, useNativeDriver: true }),
+      Animated.spring(y, { toValue: 0, useNativeDriver: true, damping: 24, stiffness: 240, mass: 0.9 }),
+    ]).start();
+  };
+
   useEffect(() => {
     if (visible) {
-      setMounted(true);
       y.setValue(SCREEN_H);
-      Animated.parallel([
-        Animated.timing(fade, { toValue: 1, duration: 200, useNativeDriver: true }),
-        Animated.spring(y, { toValue: 0, useNativeDriver: true, damping: 24, stiffness: 240, mass: 0.9 }),
-      ]).start();
+      fade.setValue(0);
+      if (mounted) animateIn(); // already on screen (re-opened before close finished)
+      else setMounted(true);
     } else if (mounted) {
       Animated.parallel([
         Animated.timing(fade, { toValue: 0, duration: 180, useNativeDriver: true }),
@@ -47,7 +54,7 @@ export default function BottomSheet({ visible, onClose, title, children, scroll 
   const Body = scroll ? ScrollView : View;
 
   return (
-    <Modal visible transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
+    <Modal visible transparent animationType="none" onRequestClose={onClose} onShow={animateIn} statusBarTranslucent>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>
           <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: th.overlay, opacity: fade }]} />

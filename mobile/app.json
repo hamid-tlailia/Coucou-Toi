@@ -46,7 +46,18 @@
     "plugins": [
       "expo-secure-store",
       "expo-localization",
-      "expo-font",
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/Tajawal_400Regular.ttf",
+            "./assets/fonts/Tajawal_500Medium.ttf",
+            "./assets/fonts/Tajawal_700Bold.ttf",
+            "./assets/fonts/Tajawal_800ExtraBold.ttf",
+            "./assets/fonts/ionicons.ttf"
+          ]
+        }
+      ],
       [
         "expo-camera",
         {
