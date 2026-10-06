@@ -206,7 +206,10 @@ function messengerLikeHandler(channel) {
     res.sendStatus(200);
     background((async () => {
       for (const entry of req.body?.entry || []) {
-        for (const messaging of entry.messaging || []) {
+        // "standby": the conversation is handled by another app (e.g. Meta's
+        // business AI that answers on the Page) — the customer's message
+        // still reaches us there.
+        for (const messaging of [...(entry.messaging || []), ...(entry.standby || [])]) {
           const message = messaging.message;
           if (!message || message.is_echo) continue; // receipts and our own outgoing messages
 
