@@ -43,7 +43,7 @@ const ar = {
   extracting: 'جارٍ التحليل…', drafts: 'طلبات بانتظار المراجعة', smartEmpty: 'لا توجد طلبات مقترحة حالياً',
   rawMessage: 'الرسالة الأصلية', confidence: 'الثقة', approveOrder: 'موافقة وإنشاء', rejectOrder: 'رفض',
   approvedToast: 'تم إنشاء الطلب', rejectedToast: 'تم رفض الطلب', missingFields: 'يرجى تعبئة الاسم والهاتف والمبلغ',
-  draftCreated: 'تمت إضافة الطلب للمراجعة', aiNoKey: 'لم يتم ضبط مفتاح الذكاء الاصطناعي على الخادم، عدّل الحقول يدوياً',
+  draftCreated: 'تمت إضافة الطلب للمراجعة', aiNoKey: 'لم يتم ضبط مفتاح الذكاء الاصطناعي على الخادم، عدّل الحقول يدوياً', aiFailed: 'تعذّر تحليل الرسالة الآن، أكمل الحقول يدوياً',
   // scan
   scanTitle: 'فحص الطلب', scanHint: 'وجّه الكاميرا نحو رمز QR على الفاتورة', manualCode: 'أو أدخل رقم الطلب', check: 'فحص',
   notFound: 'لم يتم العثور على الطلب', markPaid: 'تحديد كمدفوع', confirmDelivery: 'تأكيد التسليم', scanAgain: 'مسح طلب آخر', openOrder: 'تفاصيل الطلب',
@@ -54,7 +54,7 @@ const ar = {
   storeInfo: 'معلومات المتجر', storeInfoHint: 'تظهر على الفواتير وصفحة التتبع', storePhone: 'هاتف المتجر', storeAddress: 'عنوان المتجر',
   yourName: 'اسمك', saved: 'تم الحفظ', preferences: 'التفضيلات', language: 'اللغة', theme: 'المظهر', dark: 'داكن', light: 'فاتح',
   security: 'الأمان والإشعارات', appLock: 'قفل التطبيق بالبصمة', pushNotif: 'إشعارات الهاتف',
-  pushOn: 'مفعّلة', pushOff: 'غير مفعّلة', pushLocal: 'مفعّلة داخل التطبيق', logout: 'تسجيل الخروج', server: 'الخادم', version: 'الإصدار',
+  pushOn: 'مفعّلة', pushOff: 'غير مفعّلة', pushLocal: 'مفعّلة داخل التطبيق', testNotif: 'إرسال إشعار تجريبي', testSent: 'تم الإرسال — سيصلك الإشعار خلال ثوانٍ', logout: 'تسجيل الخروج', server: 'الخادم', version: 'الإصدار',
   timeAgoNow: 'الآن', minutes: 'د', hours: 'س',
 };
 
@@ -94,7 +94,7 @@ const en = {
   extracting: 'Analyzing…', drafts: 'Awaiting review', smartEmpty: 'No suggested orders',
   rawMessage: 'Original message', confidence: 'Confidence', approveOrder: 'Approve & create', rejectOrder: 'Reject',
   approvedToast: 'Order created', rejectedToast: 'Order rejected', missingFields: 'Please fill name, phone and amount',
-  draftCreated: 'Added for review', aiNoKey: 'AI key is not set on the server — fill the fields manually',
+  draftCreated: 'Added for review', aiNoKey: 'AI key is not set on the server — fill the fields manually', aiFailed: 'Could not analyze the message — fill the fields manually',
   scanTitle: 'Check an order', scanHint: 'Point the camera at the invoice QR code', manualCode: 'Or type the order number', check: 'Check',
   notFound: 'Order not found', markPaid: 'Mark as paid', confirmDelivery: 'Confirm delivery', scanAgain: 'Scan another', openOrder: 'Order details',
   cameraDenied: 'Camera permission is needed to scan', allowCamera: 'Allow camera',
@@ -102,7 +102,7 @@ const en = {
   storeInfo: 'Store details', storeInfoHint: 'Shown on invoices and the tracking page', storePhone: 'Store phone', storeAddress: 'Store address',
   yourName: 'Your name', saved: 'Saved', preferences: 'Preferences', language: 'Language', theme: 'Theme', dark: 'Dark', light: 'Light',
   security: 'Security & notifications', appLock: 'Biometric app lock', pushNotif: 'Phone notifications',
-  pushOn: 'On', pushOff: 'Off', pushLocal: 'In-app only', logout: 'Sign out', server: 'Server', version: 'Version',
+  pushOn: 'On', pushOff: 'Off', pushLocal: 'In-app only', testNotif: 'Send a test notification', testSent: 'Sent — it should arrive in a few seconds', logout: 'Sign out', server: 'Server', version: 'Version',
   timeAgoNow: 'now', minutes: 'm', hours: 'h',
 };
 

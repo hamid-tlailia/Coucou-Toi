@@ -3,11 +3,12 @@ import { View, StyleSheet, Animated, ScrollView } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import { usePrefs } from '../context/Prefs';
-import { Txt, Input, Button, Card, Tag, haptic } from '../components/ui';
+import { Txt, Input, Button, Card, Tag, Press, haptic } from '../components/ui';
 import { findByCode, updateOrder, shortNo } from '../api/orders';
 import { formatTND } from '../lib/money';
 import { ltr } from '../lib/orderActions';
-import { GOLD, GREEN, STATUS_COLORS, PAY_COLORS } from '../theme';
+import { GOLD, GREEN, GOLD_GRAD, STATUS_COLORS, PAY_COLORS } from '../theme';
+import { LinearGradient } from 'expo-linear-gradient';
 
 /** Pulls the order code out of whatever the QR contains. */
 function codeFrom(data) {
@@ -79,7 +80,7 @@ export default function ScanScreen({ onOpenOrder, onChanged }) {
           <>
             <CameraView style={StyleSheet.absoluteFill} barcodeScannerSettings={{ barcodeTypes: ['qr', 'code128'] }}
               onBarcodeScanned={result ? undefined : onScanned} />
-            <View pointerEvents="none" style={styles.frameWrap}>
+            <View pointerEvents="none" style={[styles.frameWrap, { direction: 'ltr' }]}>
               {[styles.tl, styles.tr, styles.bl, styles.br].map((s, i) => <View key={i} style={[styles.corner, s]} />)}
               <Animated.View style={[styles.line, { transform: [{ translateY: line.interpolate({ inputRange: [0, 1], outputRange: [0, 190] }) }] }]} />
             </View>
@@ -93,10 +94,15 @@ export default function ScanScreen({ onOpenOrder, onChanged }) {
         )}
       </View>
 
-      <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-end', marginTop: 4 }}>
-        <Input icon="keypad-outline" label={t.manualCode} placeholder="A1B2C3" autoCapitalize="characters"
+      <Txt w="b" size={12.5} color={th.muted} style={{ marginTop: 18, marginBottom: 8 }}>{t.manualCode}</Txt>
+      <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+        <Input icon="keypad-outline" placeholder="A1B2C3" autoCapitalize="characters" returnKeyType="search"
           value={manual} onChangeText={setManual} onSubmitEditing={() => lookup(manual)} style={{ flex: 1 }} />
-        <Button title={t.check} onPress={() => lookup(manual)} small style={{ marginBottom: 2 }} />
+        <Press onPress={() => lookup(manual)} style={styles.checkBtn}>
+          <LinearGradient colors={GOLD_GRAD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.checkInner}>
+            <Ionicons name="search" size={22} color="#1A1214" />
+          </LinearGradient>
+        </Press>
       </View>
 
       {!!error && <Txt w="b" color="#E0655B" style={{ textAlign: 'center', marginTop: 14 }}>{error}</Txt>}
@@ -135,6 +141,8 @@ const C = 26;
 const styles = StyleSheet.create({
   cam: { height: 260, borderRadius: 28, overflow: 'hidden', borderWidth: 1 },
   frameWrap: { position: 'absolute', top: 30, bottom: 30, left: 50, right: 50 },
+  checkBtn: { width: 52, height: 52, borderRadius: 16 },
+  checkInner: { flex: 1, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   corner: { position: 'absolute', width: C, height: C, borderColor: GOLD },
   tl: { top: 0, left: 0, borderTopWidth: 4, borderLeftWidth: 4, borderTopLeftRadius: 14 },
   tr: { top: 0, right: 0, borderTopWidth: 4, borderRightWidth: 4, borderTopRightRadius: 14 },

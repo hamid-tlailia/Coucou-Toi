@@ -26,7 +26,6 @@ export function invoiceHtml({ order, user, t }) {
   const date = new Date(order.createdAt || order.date).toLocaleDateString(rtl ? 'ar-TN' : 'fr-TN', { year: 'numeric', month: 'long', day: 'numeric' });
 
   return `<!doctype html><html dir="${t.dir}"><head><meta charset="utf-8"/>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&family=Playfair+Display:wght@700&display=swap">
 <style>
   @page { size: A5; margin: 0 }
   * { box-sizing: border-box }
@@ -88,9 +87,15 @@ export function invoiceHtml({ order, user, t }) {
 }
 
 export async function shareInvoicePdf(args) {
-  const { uri } = await Print.printToFileAsync({ html: invoiceHtml(args), width: 420, height: 595 });
-  if (await Sharing.isAvailableAsync()) {
+  const html = invoiceHtml(args);
+  const { uri } = await Print.printToFileAsync({ html });
+  try {
+    if (!(await Sharing.isAvailableAsync())) throw new Error('sharing unavailable');
     await Sharing.shareAsync(uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: `${args.t.invoice} ${shortNo(args.order)}` });
+  } catch (e) {
+    // Fallback: the system print screen, which also offers "Save as PDF" and sharing.
+    console.warn('share failed, opening print dialog', e?.message);
+    await Print.printAsync({ uri });
   }
   return uri;
 }

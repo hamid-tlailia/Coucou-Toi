@@ -49,7 +49,7 @@ router.post('/from-text', validate(fromTextSchema), async (req, res) => {
       confidence: draft.confidence,
     },
   });
-  res.status(201).json(serialize(pending));
+  res.status(201).json({ ...serialize(pending), aiStatus: draft.aiStatus });
 });
 
 /*

@@ -62,7 +62,7 @@ export default function AddOrderSheet({ visible, editing, onClose, onSaved }) {
       <Input label={`${t.amount} (د.ت) *`} icon="cash-outline" keyboardType="decimal-pad" placeholder="0.000" value={f.total} onChangeText={set('total')} />
 
       <Txt w="b" size={12.5} color={th.muted} style={{ marginTop: 14, marginBottom: 8 }}>{t.payStatus}</Txt>
-      <View style={{ flexDirection: 'row' }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 8 }}>
         {PAY_KEYS.map((p) => <Chip key={p} label={t[`pay_${p}`]} color={PAY_COLORS[p]} active={f.pay === p} onPress={() => set('pay')(p)} />)}
       </View>
 

@@ -3,6 +3,7 @@ const { z } = require('zod');
 const { prisma } = require('../lib/db');
 const { requireAuth } = require('../middleware/auth');
 const { validate } = require('../middleware/validate');
+const { notify } = require('../lib/notify');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -26,7 +27,7 @@ router.post('/read-all', async (req, res) => {
   res.json({ ok: true });
 });
 
-const tokenSchema = z.object({ token: z.string().trim().max(200).nullable() });
+const tokenSchema = z.object({ token: z.string().trim().max(4096).nullable() });
 
 // Called by the app after the user grants notification permission.
 router.put('/push-token', validate(tokenSchema), async (req, res) => {
@@ -36,6 +37,12 @@ router.put('/push-token', validate(tokenSchema), async (req, res) => {
   }
   await prisma.user.update({ where: { id: req.user.id }, data: { pushToken: req.body.token } });
   res.json({ ok: true });
+});
+
+// "Send a test notification" button in Settings.
+router.post('/test', async (req, res) => {
+  await notify(req.user.id, { type: 'test', title: '🔔 Coco Love', body: 'الإشعارات تعمل بنجاح ✨' });
+  res.json({ ok: true, push: !!req.user.pushToken });
 });
 
 module.exports = router;

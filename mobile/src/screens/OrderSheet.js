@@ -84,7 +84,7 @@ export default function OrderSheet({ order: initial, onClose, onChanged, onInvoi
       </View>
 
       <Txt w="b" size={13} color={th.muted} style={{ marginTop: 18, marginBottom: 10 }}>{t.payStatus}</Txt>
-      <View style={{ flexDirection: 'row' }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 8 }}>
         {PAY_KEYS.map((p) => (
           <Chip key={p} label={t[`pay_${p}`]} active={order.pay === p} color={PAY_COLORS[p]}
             icon={p === 'paid' ? 'checkmark-circle-outline' : p === 'cod' ? 'cash-outline' : 'time-outline'}

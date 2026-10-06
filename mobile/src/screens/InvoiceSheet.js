@@ -22,7 +22,10 @@ export default function InvoiceSheet({ order, onClose }) {
 
   const run = (key, fn) => async () => {
     setBusy(key);
-    try { await fn(); } catch { showToast(t.error, 'error'); } finally { setBusy(''); }
+    try { await fn(); } catch (e) {
+      // Show the real reason so a failure on a specific phone can be diagnosed.
+      showToast(e?.message ? `${t.error}: ${e.message}` : t.error, 'error');
+    } finally { setBusy(''); }
   };
   const args = { order, user, t };
 

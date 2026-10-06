@@ -8,6 +8,9 @@ export const DEEP = '#2A1830';
 export const GREEN = '#4CB782';
 export const RED = '#E0655B';
 export const BLUE = '#6B8AF2';
+// Android drops borderRadius when a view gets its first background after
+// mounting, so "no background" states use an invisible color instead of none.
+export const CLEAR = 'rgba(255,255,255,0.004)';
 
 export const THEMES = {
   dark: {

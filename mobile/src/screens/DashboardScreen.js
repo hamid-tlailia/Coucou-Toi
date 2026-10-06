@@ -7,7 +7,7 @@ import { Txt, Card, SectionTitle, Press, Skeleton, FadeIn, Button } from '../com
 import { AreaChart, PairBars, Ring, ShareBar } from '../components/Charts';
 import { getDashboard } from '../api/orders';
 import { formatTND } from '../lib/money';
-import { GOLD, GOLD_L, BLUE, GREEN, RED, PLUM, SOURCES, STATUS_KEYS, STATUS_COLORS } from '../theme';
+import { GOLD, GOLD_L, BLUE, GREEN, RED, PLUM, SOURCES, STATUS_KEYS, STATUS_COLORS, CLEAR } from '../theme';
 
 const compact = (n) => formatTND(n).replace('.000', '');
 
@@ -56,7 +56,7 @@ export default function DashboardScreen({ refreshKey, goTo }) {
       {/* Range */}
       <View style={{ flexDirection: 'row', backgroundColor: th.surface, borderRadius: 16, padding: 4, borderWidth: 1, borderColor: th.border, marginBottom: 16 }}>
         {[7, 14, 30].map((n) => (
-          <Press key={n} onPress={() => setDays(n)} style={{ flex: 1, paddingVertical: 9, borderRadius: 12, alignItems: 'center', backgroundColor: days === n ? th.raised : 'transparent' }}>
+          <Press key={n} onPress={() => setDays(n)} style={{ flex: 1, paddingVertical: 9, borderRadius: 12, alignItems: 'center', backgroundColor: days === n ? th.raised : CLEAR }}>
             <Txt w={days === n ? 'b' : 'm'} size={13} color={days === n ? th.accent : th.muted}>{n} {t.days}</Txt>
           </Press>
         ))}

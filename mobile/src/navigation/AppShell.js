@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../auth/AuthContext';
 import { usePrefs } from '../context/Prefs';
 import { Txt, Press, IconBtn, haptic } from '../components/ui';
-import { GOLD_GRAD, RED, shadow } from '../theme';
+import { GOLD_GRAD, RED, CLEAR, shadow } from '../theme';
 import { listNotifications, markAllRead, logVisit } from '../api/account';
 import { listOrders } from '../api/orders';
 import { registerForNotifications, showLocalNotification, onNotificationTap, onNotificationReceived, setBadge } from '../lib/push';
@@ -203,7 +203,7 @@ export default function AppShell() {
           const badge = tb.key === 'smart' ? smartCount : 0;
           return (
             <Press key={tb.key} onPress={() => go(tb.key)} scale={0.88} hapticKind={null} style={styles.tabItem}>
-              <View style={[styles.tabIcon, on && { backgroundColor: `${th.accent}22` }]}>
+              <View style={[styles.tabIcon, { backgroundColor: on ? `${th.accent}22` : CLEAR }]}>
                 <Ionicons name={on ? tb.icon : `${tb.icon}-outline`} size={22} color={on ? th.accent : th.muted} />
                 {!!badge && (
                   <View style={styles.tabBadge}><Txt w="b" size={9.5} color="#FFF">{badge > 9 ? '9+' : badge}</Txt></View>

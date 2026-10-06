@@ -58,13 +58,18 @@ async function transcribeAudio(audioUrl) {
  * Never throws — an extraction failure just yields an empty, low-confidence
  * draft that still shows up for manual review instead of getting lost.
  */
+// Tried in order; the first model the key has access to wins. Lets the app
+// keep working when Google retires a model name.
+const MODELS = [...new Set([process.env.GEMINI_MODEL, 'gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.0-flash'].filter(Boolean))];
+
 async function extractOrder({ text, imageUrl }) {
-  const empty = () => ({
+  const empty = (aiStatus) => ({
     customer: null, phone: null, city: null, address: null,
-    items: null, total: null, pay: 'cod', confidence: 0,
+    items: null, total: null, pay: 'cod', confidence: 0, aiStatus,
   });
 
-  if (!process.env.GEMINI_API_KEY || (!text && !imageUrl)) return empty();
+  if (!process.env.GEMINI_API_KEY) return empty('no_key');
+  if (!text && !imageUrl) return empty('empty');
 
   try {
     const parts = [{ text: `${EXTRACTION_PROMPT}\n\nرسالة العميل:\n${text || '(بدون نص، انظر الصورة المرفقة)'}` }];
@@ -78,22 +83,28 @@ async function extractOrder({ text, imageUrl }) {
       }
     }
 
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${process.env.GEMINI_MODEL || 'gemini-2.5-flash'}:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts }],
-          generationConfig: { responseMimeType: 'application/json', temperature: 0.1 },
-        }),
-      }
-    );
-    if (!res.ok) return empty();
+    let data = null;
+    for (const model of MODELS) {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': process.env.GEMINI_API_KEY },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts }],
+            generationConfig: { responseMimeType: 'application/json', temperature: 0.1 },
+          }),
+        }
+      );
+      if (res.ok) { data = await res.json(); break; }
+      const body = await res.text().catch(() => '');
+      console.error(`gemini ${model} failed`, res.status, body.slice(0, 300));
+      if (res.status !== 404) break; // bad key / quota: other models won't help
+    }
+    if (!data) return empty('failed');
 
-    const data = await res.json();
     const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!jsonText) return empty();
+    if (!jsonText) return empty('failed');
 
     const parsed = JSON.parse(jsonText);
     return {
@@ -105,10 +116,11 @@ async function extractOrder({ text, imageUrl }) {
       total: typeof parsed.total === 'number' ? parsed.total : null,
       pay: ['cod', 'paid', 'unpaid'].includes(parsed.pay) ? parsed.pay : 'cod',
       confidence: typeof parsed.confidence === 'number' ? Math.max(0, Math.min(1, parsed.confidence)) : 0.5,
+      aiStatus: 'ok',
     };
   } catch (e) {
     console.error('extractOrder failed', e);
-    return empty();
+    return empty('failed');
   }
 }
 

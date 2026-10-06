@@ -41,6 +41,14 @@ export async function registerForNotifications() {
   if (!Device.isDevice) return 'local';
 
   try {
+    if (Platform.OS === 'android') {
+      // Native FCM token — the server sends to it directly through Firebase
+      // (no Expo account). Throws when the APK was built without
+      // google-services.json, in which case we fall back to in-app polling.
+      const { data } = await Notifications.getDevicePushTokenAsync();
+      await savePushToken(data);
+      return 'push';
+    }
     const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
     if (!projectId) return 'local';
     const { data } = await Notifications.getExpoPushTokenAsync({ projectId });

@@ -5,10 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../auth/AuthContext';
 import { usePrefs } from '../context/Prefs';
 import { Txt, Card, Input, Button, Press, haptic } from '../components/ui';
-import { updateMe } from '../api/account';
+import { updateMe, sendTestNotification } from '../api/account';
 import { isAppLockEnabled, setAppLockEnabled, requireBiometricUnlock } from '../lib/appLock';
 import { API_URL } from '../config';
-import { GOLD, GREEN, RED } from '../theme';
+import { GOLD, GREEN, RED, CLEAR } from '../theme';
 
 export default function ProfileScreen({ pushMode, onEnablePush }) {
   const { user, setUser, signOut } = useAuth();
@@ -77,6 +77,11 @@ export default function ProfileScreen({ pushMode, onEnablePush }) {
               <Txt w="m" size={13} color={th.muted}>{pushLabel}</Txt>
             </View>} />
         </Press>
+        <Press onPress={async () => {
+          try { await sendTestNotification(); showToast(t.testSent, 'info'); } catch { showToast(t.error, 'error'); }
+        }}>
+          <Row icon="paper-plane-outline" label={t.testNotif} right={<Ionicons name="chevron-back" size={18} color={th.muted} />} />
+        </Press>
         <Row icon="server-outline" label={t.server} right={<Txt size={11.5} color={th.faint} numberOfLines={1} style={{ maxWidth: 170 }}>{API_URL.replace(/^https?:\/\//, '')}</Txt>} />
         <Row icon="information-circle-outline" label={t.version} right={<Txt size={13} color={th.faint}>{Constants.expoConfig?.version}</Txt>} last />
       </Card>
@@ -91,7 +96,7 @@ function Segmented({ value, onChange, items }) {
   return (
     <View style={{ flexDirection: 'row', backgroundColor: th.raised, borderRadius: 14, padding: 4 }}>
       {items.map(([k, l]) => (
-        <Press key={k} onPress={() => onChange(k)} style={{ flex: 1, paddingVertical: 10, borderRadius: 11, alignItems: 'center', backgroundColor: value === k ? th.surface : 'transparent' }}>
+        <Press key={k} onPress={() => onChange(k)} style={{ flex: 1, paddingVertical: 10, borderRadius: 11, alignItems: 'center', backgroundColor: value === k ? th.surface : CLEAR }}>
           <Txt w={value === k ? 'b' : 'm'} size={13} color={value === k ? th.accent : th.muted}>{l}</Txt>
         </Press>
       ))}

@@ -39,7 +39,8 @@ export default function SmartOrdersScreen({ refreshKey, onApproved, onCountChang
       onCountChange?.((drafts?.length || 0) + 1);
       setText('');
       haptic('success');
-      showToast(draft.confidence > 0 ? t.draftCreated : t.aiNoKey, draft.confidence > 0 ? 'ok' : 'info');
+      const msg = { ok: t.draftCreated, no_key: t.aiNoKey, failed: t.aiFailed }[draft.aiStatus] || t.draftCreated;
+      showToast(msg, draft.aiStatus === 'ok' ? 'ok' : 'info');
     } catch (e) {
       showToast(e.code === 'network' ? t.offline : t.error, 'error');
     } finally {
@@ -169,7 +170,7 @@ function DraftCard({ draft, onApprove, onReject }) {
           <Input label={t.city} value={f.city} onChangeText={set('city')} />
           <Input label={t.products} value={f.items} onChangeText={set('items')} />
           <Input label={`${t.amount} (د.ت)`} keyboardType="decimal-pad" value={f.total} onChangeText={set('total')} />
-          <View style={{ flexDirection: 'row', marginTop: 12 }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 8, marginTop: 12 }}>
             {PAY_KEYS.map((p) => <Chip key={p} label={t[`pay_${p}`]} color={PAY_COLORS[p]} active={f.pay === p} onPress={() => set('pay')(p)} />)}
           </View>
         </View>
