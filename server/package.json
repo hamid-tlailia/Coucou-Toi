@@ -9,15 +9,18 @@
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:generate": "prisma generate"
+    "prisma:generate": "prisma generate",
+    "vercel-build": "node scripts/db-push.js"
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",
+    "@vercel/functions": "^3.9.11",
     "apple-signin-auth": "^1.7.7",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
     "express": "^4.21.0",
+    "express-async-errors": "^3.1.1",
     "express-rate-limit": "^7.4.0",
     "google-auth-library": "^9.14.0",
     "helmet": "^7.1.0",
