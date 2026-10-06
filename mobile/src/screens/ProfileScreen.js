@@ -8,6 +8,7 @@ import { Txt, Card, Input, Button, Press, haptic } from '../components/ui';
 import { updateMe, sendTestNotification } from '../api/account';
 import { isAppLockEnabled, setAppLockEnabled, requireBiometricUnlock } from '../lib/appLock';
 import { GOLD, GREEN, RED, CLEAR } from '../theme';
+import CaptureCard, { disableCapture } from '../components/CaptureCard';
 
 export default function ProfileScreen({ pushMode, onEnablePush }) {
   const { user, setUser, signOut } = useAuth();
@@ -84,7 +85,9 @@ export default function ProfileScreen({ pushMode, onEnablePush }) {
         <Row icon="information-circle-outline" label={t.version} right={<Txt size={13} color={th.faint}>{Constants.expoConfig?.version}</Txt>} last />
       </Card>
 
-      <Button title={t.logout} icon="log-out-outline" variant="danger" onPress={signOut} style={{ marginTop: 18 }} />
+      <CaptureCard />
+
+      <Button title={t.logout} icon="log-out-outline" variant="danger" onPress={() => { disableCapture(); signOut(); }} style={{ marginTop: 18 }} />
     </ScrollView>
   );
 }

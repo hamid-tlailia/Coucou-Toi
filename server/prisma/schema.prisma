@@ -61,6 +61,7 @@ model User {
   storePhone    String?       // printed on invoices
   storeAddress  String?       // printed on invoices
   pushToken     String?       // Expo push token of the merchant's phone
+  ingestTokenHash String?     @unique // sha256 of the phone's message-capture key (see routes/ingest.js)
   provider      AuthProvider
   providerSub   String?       // Google `sub` / Apple `sub` — used to re-match on future sign-ins
   plan          PlanId        @default(free)
@@ -121,8 +122,11 @@ model PendingOrder {
   approvedOrderId String?            @unique
   createdAt       DateTime           @default(now())
   reviewedAt      DateTime?
+  threadKey       String?            // "<source>:<sender>" for messages captured on the phone — follow-ups extend the same draft
+  lastMessageAt   DateTime?
 
   @@index([userId, status])
+  @@index([userId, threadKey])
 }
 
 model RefreshToken {

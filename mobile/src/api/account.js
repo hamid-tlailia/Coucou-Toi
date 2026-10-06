@@ -9,4 +9,7 @@ export const savePushToken = (token) => api('/notifications/push-token', { metho
 
 export const sendTestNotification = () => api('/notifications/test', { method: 'POST' });
 
+/** New capture key for the phone's native message capture (replaces the old one). */
+export const getIngestKey = () => api('/ingest/token', { method: 'POST' });
+
 export const logVisit = () => api('/visits', { method: 'POST' });
