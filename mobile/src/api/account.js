@@ -17,3 +17,6 @@ export const logVisit = () => api('/visits', { method: 'POST' });
 /** Home-screen web app (iPhone): Web Push key and subscription. */
 export const getVapidKey = () => api('/notifications/vapid-key');
 export const saveWebPush = (subscription) => api('/notifications/web-push', { method: 'PUT', body: { subscription } });
+
+/** Which messaging channels (WhatsApp / Instagram / Messenger) feed the assistant automatically. */
+export const getChannels = () => api('/notifications/channels');

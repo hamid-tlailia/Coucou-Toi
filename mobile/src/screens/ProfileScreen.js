@@ -9,6 +9,7 @@ import { updateMe, sendTestNotification } from '../api/account';
 import { isAppLockEnabled, setAppLockEnabled, requireBiometricUnlock, lockSupported } from '../lib/appLock';
 import { GOLD, GREEN, RED, CLEAR } from '../theme';
 import CaptureCard from '../components/CaptureCard';
+import ChannelsCard from '../components/ChannelsCard';
 import { disableCapture } from '../lib/capture';
 
 export default function ProfileScreen({ pushMode, onEnablePush }) {
@@ -86,6 +87,7 @@ export default function ProfileScreen({ pushMode, onEnablePush }) {
         <Row icon="information-circle-outline" label={t.version} right={<Txt size={13} color={th.faint}>{Constants.expoConfig?.version}</Txt>} last />
       </Card>
 
+      <ChannelsCard />
       <CaptureCard />
 
       <Button title={t.logout} icon="log-out-outline" variant="danger" onPress={() => { disableCapture(); signOut(); }} style={{ marginTop: 18 }} />

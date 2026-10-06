@@ -6,6 +6,7 @@ const { validate } = require('../middleware/validate');
 const { notify } = require('../lib/notify');
 const { syncStock } = require('../lib/stock');
 const { background } = require('../lib/background');
+const { channelStatus } = require('./webhooks');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -48,6 +49,9 @@ router.put('/push-token', validate(tokenSchema), async (req, res) => {
 });
 
 // "Send a test notification" button in Settings.
+// Which messaging channels the server is connected to (Settings in the app).
+router.get('/channels', (req, res) => res.json(channelStatus()));
+
 // Home-screen web app (iPhone): the key to subscribe with, and the subscription.
 router.get('/vapid-key', (req, res) => res.json({ key: process.env.VAPID_PUBLIC_KEY || null }));
 

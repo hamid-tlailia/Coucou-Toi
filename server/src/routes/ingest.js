@@ -6,8 +6,7 @@
  *    or the text-selection menu.
  * The phone authenticates with its own long-lived capture key (not the
  * user's session tokens, which the native side can't read or refresh).
- * Follow-up messages from the same sender extend the same draft, so an
- * order typed over several messages ends up as one.
+ * The analysis itself lives in services/messageIntake.js.
  */
 const crypto = require('crypto');
 const express = require('express');
@@ -16,11 +15,9 @@ const { z } = require('zod');
 const { prisma } = require('../lib/db');
 const { requireAuth } = require('../middleware/auth');
 const { validate } = require('../middleware/validate');
-const { extractOrder } = require('../services/aiPipeline');
-const { notifyNewDraft } = require('./pendingOrders');
+const { intakeMessage } = require('../services/messageIntake');
 
 const router = express.Router();
-const THREAD_WINDOW_MS = 60 * 60 * 1000;
 const sha256 = (s) => crypto.createHash('sha256').update(s).digest('hex');
 
 // Issues (and replaces) the phone's capture key. Called by the app when
@@ -47,53 +44,13 @@ const messageSchema = z.object({
   mode: z.enum(['notification', 'capture']),
 });
 
-const phoneLike = (s) => {
-  const d = String(s || '').replace(/[\s\-()+]/g, '');
-  return /^\d{8,15}$/.test(d) ? d : null;
-};
-
 router.post('/message', rateLimit({ windowMs: 60 * 1000, max: 60 }), requireIngestKey, validate(messageSchema), async (req, res) => {
   const { source, sender, text, mode } = req.body;
-  const userId = req.user.id;
-  const threadKey = sender ? `${source}:${sender}`.slice(0, 200) : null;
-
-  const open = threadKey && await prisma.pendingOrder.findFirst({
-    where: { userId, threadKey, status: 'pending', lastMessageAt: { gte: new Date(Date.now() - THREAD_WINDOW_MS) } },
-    orderBy: { createdAt: 'desc' },
-  });
-  const combined = open?.rawText ? `${open.rawText}\n${text}` : text;
-  const hint = sender ? `(المرسل كما يظهر في التطبيق: ${sender})\n` : '';
-  const draft = await extractOrder({ text: `${hint}${combined}` });
-
+  const out = await intakeMessage({ userId: req.user.id, source, sender, text });
   // Busy AI: the phone keeps the message and retries later.
-  if (draft.aiStatus !== 'ok') return res.status(503).json({ error: 'ai_busy' });
-
-  if (open) {
-    const pick = (k) => draft[k] ?? open[k];
-    const updated = await prisma.pendingOrder.update({
-      where: { id: open.id },
-      data: {
-        customer: pick('customer'), phone: pick('phone') ?? phoneLike(sender), city: pick('city'),
-        address: pick('address'), items: pick('items'), total: pick('total'), pay: draft.pay || open.pay,
-        confidence: draft.confidence, rawText: combined, lastMessageAt: new Date(),
-      },
-    });
-    return res.json({ result: 'updated', id: updated.id });
-  }
-
-  if (!draft.isOrder) return res.status(mode === 'capture' ? 422 : 200).json({ result: 'not_order' });
-
-  const pending = await prisma.pendingOrder.create({
-    data: {
-      userId, source, threadKey, lastMessageAt: new Date(),
-      customer: draft.customer ?? (phoneLike(sender) ? null : sender || null),
-      phone: draft.phone ?? phoneLike(sender),
-      city: draft.city, address: draft.address, items: draft.items, total: draft.total,
-      pay: draft.pay, rawText: combined, confidence: draft.confidence,
-    },
-  });
-  await notifyNewDraft(pending);
-  res.status(201).json({ result: 'created', id: pending.id });
+  if (out.result === 'ai_busy') return res.status(503).json({ error: 'ai_busy' });
+  if (out.result === 'not_order') return res.status(mode === 'capture' ? 422 : 200).json(out);
+  res.status(out.result === 'created' ? 201 : 200).json(out);
 });
 
 module.exports = router;

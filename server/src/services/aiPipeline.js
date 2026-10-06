@@ -95,21 +95,25 @@ async function callGemini(parts) {
   return null;
 }
 
-async function extractOrder({ text, imageUrl }) {
+async function extractOrder({ text, imageUrl, media = [] }) {
   const empty = (aiStatus) => ({
     customer: null, phone: null, city: null, address: null,
     items: null, total: null, pay: 'cod', confidence: 0, isOrder: null, aiStatus,
   });
 
   if (!process.env.GEMINI_API_KEY) return empty('no_key');
-  if (!text && !imageUrl) return empty('empty');
+  if (!text && !imageUrl && !media.length) return empty('empty');
 
   try {
     const catalog = await getCatalog();
     const catalogText = catalog.length
       ? `\n\nقائمة منتجات المتجر وأسعارها بالدينار (استعمل الاسم كما هو مكتوب هنا في حقل items، واحسب total من هذه الأسعار × الكمية إن لم يذكر العميل مبلغاً):\n${catalog.map((p) => `- ${p.name}: ${p.price}`).join('\n')}`
       : '';
-    const parts = [{ text: `${EXTRACTION_PROMPT}${catalogText}\n\nرسالة العميل:\n${text || '(بدون نص، انظر الصورة المرفقة)'}` }];
+    const parts = [{ text: `${EXTRACTION_PROMPT}${catalogText}\n\nرسالة العميل:\n${text || '(بدون نص، انظر الصورة أو الرسالة الصوتية المرفقة)'}` }];
+
+    // Photos and voice notes already downloaded by the caller: Gemini reads
+    // images and listens to audio directly (no separate transcription).
+    for (const m of media) parts.push({ inlineData: { mimeType: m.mimeType, data: m.data } });
 
     if (imageUrl) {
       const imgRes = await fetch(imageUrl);

@@ -52,7 +52,7 @@ const ar = {
   notifications: 'الإشعارات', noNotifications: 'لا توجد إشعارات', markAllRead: 'تحديد الكل كمقروء',
   // profile
   storeInfo: 'معلومات المتجر', storeInfoHint: 'تظهر على الفواتير وصفحة التتبع', storePhone: 'هاتف المتجر', storeAddress: 'عنوان المتجر',
-  yourName: 'اسمك', saved: 'تم الحفظ', preferences: 'التفضيلات', language: 'اللغة', theme: 'المظهر', dark: 'داكن', light: 'فاتح', captureTile: 'زر «تحليل المنسوخ» في لوحة الإشعارات', analysisResult: 'نتيجة التحليل', scanResult: 'الطلب الممسوح', scanLog: 'سجل المسح', addToLog: 'إضافة للسجل', clearLog: 'مسح السجل',
+  yourName: 'اسمك', saved: 'تم الحفظ', preferences: 'التفضيلات', language: 'اللغة', theme: 'المظهر', dark: 'داكن', light: 'فاتح', captureTile: 'زر «تحليل المنسوخ» في لوحة الإشعارات', analysisResult: 'نتيجة التحليل', channelsTitle: 'القنوات المتصلة', channelsHint: 'رسائل العملاء على القنوات المتصلة تصل للمساعد وحدها وتتحوّل لطلبات بانتظار المراجعة.', channelOn: 'متصلة', channelOff: 'غير متصلة', scanResult: 'الطلب الممسوح', scanLog: 'سجل المسح', addToLog: 'إضافة للسجل', clearLog: 'مسح السجل',
   captureTileHint: 'في واتساب أو انستغرام: اضغط مطولاً على رسالة العميل ← نسخ، ثم اسحب لوحة الإشعارات للأسفل واضغط زر Coucou Toi. تُحلَّل الرسالة ويُجهَّز الطلب دون مغادرة المحادثة.',
   addTile: 'إضافة الزر', tileAdded: 'تمت إضافة الزر إلى لوحة الإشعارات', tileManual: 'اسحب لوحة الإشعارات ← ✎ تعديل ← واسحب زر Coucou Toi إلى الأعلى',
   security: 'الأمان والإشعارات', appLock: 'قفل التطبيق بالبصمة', pushNotif: 'إشعارات الهاتف',
@@ -109,7 +109,7 @@ const en = {
   cameraDenied: 'Camera permission is needed to scan', allowCamera: 'Allow camera',
   notifications: 'Notifications', noNotifications: 'No notifications', markAllRead: 'Mark all as read',
   storeInfo: 'Store details', storeInfoHint: 'Shown on invoices and the tracking page', storePhone: 'Store phone', storeAddress: 'Store address',
-  yourName: 'Your name', saved: 'Saved', preferences: 'Preferences', language: 'Language', theme: 'Theme', dark: 'Dark', light: 'Light', captureTile: '"Analyse copied" button in quick settings', analysisResult: 'Analysis result', scanResult: 'Scanned order', scanLog: 'Scan history', addToLog: 'Add to history', clearLog: 'Clear history',
+  yourName: 'Your name', saved: 'Saved', preferences: 'Preferences', language: 'Language', theme: 'Theme', dark: 'Dark', light: 'Light', captureTile: '"Analyse copied" button in quick settings', analysisResult: 'Analysis result', channelsTitle: 'Connected channels', channelsHint: 'Customer messages on connected channels reach the assistant on their own as drafts to review.', channelOn: 'Connected', channelOff: 'Not connected', scanResult: 'Scanned order', scanLog: 'Scan history', addToLog: 'Add to history', clearLog: 'Clear history',
   captureTileHint: 'Copy the customer message, pull down quick settings and tap Coucou Toi — without leaving the chat.',
   addTile: 'Add button', tileAdded: 'Button added to quick settings', tileManual: 'Pull down quick settings → ✎ Edit → drag Coucou Toi up',
   security: 'Security & notifications', appLock: 'Biometric app lock', pushNotif: 'Phone notifications',
