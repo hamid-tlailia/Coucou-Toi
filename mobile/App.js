@@ -12,16 +12,24 @@ import { Txt, Button } from './src/components/ui';
 import { isAppLockEnabled, requireBiometricUnlock } from './src/lib/appLock';
 import { GOLD } from './src/theme';
 
-SplashScreen.preventAutoHideAsync().catch(() => {});
+// Startup never waits on anything that could hang: the native splash is
+// hidden on first render, and fonts get at most 3s (system font fallback).
+const FONT_TIMEOUT_MS = 3000;
 
 export default function App() {
-  const [fontsLoaded] = useFonts({ Tajawal_400Regular, Tajawal_500Medium, Tajawal_700Bold, Tajawal_800ExtraBold, ...Ionicons.font });
+  const [fontsLoaded, fontError] = useFonts({ Tajawal_400Regular, Tajawal_500Medium, Tajawal_700Bold, Tajawal_800ExtraBold, ...Ionicons.font });
+  const [timedOut, setTimedOut] = useState(false);
 
   useEffect(() => {
-    if (fontsLoaded) SplashScreen.hideAsync().catch(() => {});
-  }, [fontsLoaded]);
+    SplashScreen.hideAsync().catch(() => {});
+    // Second attempt in case the first call raced the native view setup.
+    const retry = setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 1500);
+    const t = setTimeout(() => setTimedOut(true), FONT_TIMEOUT_MS);
+    return () => { clearTimeout(t); clearTimeout(retry); };
+  }, []);
 
-  if (!fontsLoaded) return null;
+  if (fontError) console.warn('font loading failed, using system font', fontError);
+  if (!fontsLoaded && !fontError && !timedOut) return <Splash />;
   return (
     <SafeAreaProvider>
       <PrefsProvider>

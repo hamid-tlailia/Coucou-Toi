@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback, useRef } from 'react';
-import { Animated, StyleSheet } from 'react-native';
+import { Animated, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as SecureStore from 'expo-secure-store';
 import { Ionicons } from '@expo/vector-icons';
@@ -44,7 +44,7 @@ export function PrefsProvider({ children }) {
     th: THEMES[mode],
   }), [lang, mode, setLang, setMode, showToast]);
 
-  if (!ready) return null;
+  if (!ready) return <View style={{ flex: 1, backgroundColor: '#120C14' }} />;
   return (
     <Ctx.Provider value={value}>
       {children}
