@@ -78,7 +78,7 @@ export default function InvoiceSheet({ order, onClose }) {
       <Button title={t.sharePdf} icon="share-outline" onPress={run('pdf', () => shareInvoicePdf(args))} loading={busy === 'pdf'} style={{ marginTop: 18 }} />
       <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
         <Button title={t.sendWa} icon="image-outline" variant="dark" onPress={run('send', async () => {
-          if (await sendInvoiceImage(paper, order, t) === 'shared') showToast(t.msgCopied, 'info');
+          if (await sendInvoiceImage(paper, order, t) === 'app') showToast(t.msgCopied, 'info');
         })} loading={busy === 'send'} style={{ flex: 1 }} small />
         <Button title={t.print} icon="print-outline" variant="ghost" onPress={run('print', () => printInvoice(args))} loading={busy === 'print'} style={{ flex: 1 }} small />
       </View>

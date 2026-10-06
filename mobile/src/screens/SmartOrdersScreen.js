@@ -5,6 +5,7 @@ import { markClipSeen } from '../lib/copiedMessage';
 import { Ionicons } from '@expo/vector-icons';
 import { usePrefs } from '../context/Prefs';
 import StockAlert from '../components/StockAlert';
+import BottomSheet from '../components/BottomSheet';
 import { Txt, Card, Input, Chip, Button, Press, Tag, Empty, Skeleton, haptic } from '../components/ui';
 import { SOURCES, PAY_KEYS, PAY_COLORS, srcOf, GOLD, GREEN, RED } from '../theme';
 import { formatTND } from '../lib/money';
@@ -17,6 +18,8 @@ export default function SmartOrdersScreen({ refreshKey, shared, onApproved, onCo
   const [text, setText] = useState('');
   const [source, setSource] = useState('whatsapp');
   const [extracting, setExtracting] = useState(false);
+  const [result, setResult] = useState(null); // freshly analysed draft, shown in a modal
+  const [resultOpen, setResultOpen] = useState(false);
 
   const fetchDrafts = useCallback(async () => {
     try {
@@ -40,6 +43,8 @@ export default function SmartOrdersScreen({ refreshKey, shared, onApproved, onCo
       setDrafts((ds) => [draft, ...(ds || [])]);
       onCountChange?.((drafts?.length || 0) + 1);
       setText('');
+      setResult(draft);
+      setResultOpen(true);
       haptic('success');
       const msg = { ok: t.draftCreated, no_key: t.aiNoKey, failed: t.aiFailed }[draft.aiStatus] || t.draftCreated;
       showToast(msg, draft.aiStatus === 'ok' ? 'ok' : 'info');
@@ -74,13 +79,15 @@ export default function SmartOrdersScreen({ refreshKey, shared, onApproved, onCo
       haptic('success');
       showToast(t.approvedToast);
       onApproved?.(order);
+      return true;
     } catch (e) {
       showToast(e.status === 400 ? t.missingFields : t.error, 'error');
+      return false;
     }
   };
 
   const reject = async (id) => {
-    try { await rejectPendingOrder(id); remove(id); showToast(t.rejectedToast, 'info'); } catch { showToast(t.error, 'error'); }
+    try { await rejectPendingOrder(id); remove(id); showToast(t.rejectedToast, 'info'); return true; } catch { showToast(t.error, 'error'); return false; }
   };
 
   const header = (
@@ -113,6 +120,7 @@ export default function SmartOrdersScreen({ refreshKey, shared, onApproved, onCo
   );
 
   return (
+    <>
     <FlatList
       data={drafts || []}
       keyExtractor={(d) => d.id}
@@ -125,10 +133,18 @@ export default function SmartOrdersScreen({ refreshKey, shared, onApproved, onCo
         : <Empty icon="chatbubbles-outline" title={t.smartEmpty} />}
       renderItem={({ item }) => <DraftCard draft={item} onApprove={approve} onReject={reject} />}
     />
+    <BottomSheet visible={resultOpen} onClose={() => setResultOpen(false)} title={t.analysisResult}>
+      {result && (
+        <DraftCard key={result.id} draft={result} flat
+          onApprove={async (id, body) => { if (await approve(id, body)) setResultOpen(false); }}
+          onReject={async (id) => { if (await reject(id)) setResultOpen(false); }} />
+      )}
+    </BottomSheet>
+    </>
   );
 }
 
-function DraftCard({ draft, onApprove, onReject }) {
+function DraftCard({ draft, onApprove, onReject, flat }) {
   const { t, th } = usePrefs();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -153,8 +169,9 @@ function DraftCard({ draft, onApprove, onReject }) {
     setBusy(false);
   };
 
+  const Wrap = flat ? View : Card; // inside the result modal: no card frame
   return (
-    <Card style={{ marginBottom: 12 }}>
+    <Wrap style={{ marginBottom: 12 }}>
       <View style={{ flexDirection: 'row', gap: 6 }}>
         <Tag label={t[`src_${f.source}`]} color={srcOf(f.source).color} icon={srcOf(f.source).icon} />
         <Tag label={`${t.confidence} ${pct}%`} color={pctColor} />
@@ -200,6 +217,6 @@ function DraftCard({ draft, onApprove, onReject }) {
         <Button small variant="danger" icon="close" title={t.rejectOrder} onPress={() => onReject(draft.id)} style={{ flex: 0.38 }} />
         <Button small icon="checkmark-done" title={t.approveOrder} onPress={approve} loading={busy} style={{ flex: 0.62 }} />
       </View>
-    </Card>
+    </Wrap>
   );
 }

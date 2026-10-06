@@ -1,14 +1,13 @@
 package expo.modules.coucoucapture
 
 import android.app.StatusBarManager
+import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.drawable.Icon
 import android.os.Build
-import android.util.Base64
 import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
 import expo.modules.kotlin.Promise
@@ -38,37 +37,60 @@ class CoucouCaptureModule : Module() {
     }
 
     /**
-     * Opens the customer's WhatsApp chat with the invoice picture attached and
-     * the caption filled in (one direct intent — the picture can't get lost
-     * between two screens). Returns false when WhatsApp isn't installed.
+     * Sends the invoice picture (a file from react-native-view-shot) to the
+     * customer through the app the order came from:
+     *  - "whatsapp": straight into the customer's chat (picture + caption);
+     *  - "instagram" / "facebook" / "tiktok": that app's own share screen,
+     *    to pick the conversation;
+     *  - anything else, or the app missing: the system share menu.
+     * Returns what was opened: "chat", "app" or "menu".
      */
-    Function("sendImageToWhatsApp") { base64: String, phone: String, caption: String ->
-      val pm = context.packageManager
-      val pkg = listOf("com.whatsapp", "com.whatsapp.w4b").firstOrNull { installed(pm, it) }
-        ?: return@Function false
+    Function("shareInvoice") { path: String, target: String, phone: String, caption: String ->
+      val src = File(path.removePrefix("file://"))
       val dir = File(context.cacheDir, "invoices").apply { mkdirs() }
       val file = File(dir, "invoice.png")
-      file.writeBytes(Base64.decode(base64, Base64.DEFAULT))
+      src.copyTo(file, overwrite = true)
       val uri = FileProvider.getUriForFile(context, "${context.packageName}.coucou.files", file)
-      val intent = Intent(Intent.ACTION_SEND).apply {
-        setPackage(pkg)
+
+      fun send(pkg: String?, component: String? = null) = Intent(Intent.ACTION_SEND).apply {
         type = "image/png"
         putExtra(Intent.EXTRA_STREAM, uri)
         putExtra(Intent.EXTRA_TEXT, caption)
-        if (phone.isNotEmpty()) putExtra("jid", "$phone@s.whatsapp.net")
         clipData = ClipData.newRawUri("invoice", uri)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (component != null && pkg != null) setClassName(pkg, component) else if (pkg != null) setPackage(pkg)
       }
-      (appContext.currentActivity ?: context).startActivity(intent)
-      true
-    }
-  }
+      val starter = appContext.currentActivity ?: context
+      fun tryStart(intent: Intent) = try {
+        starter.startActivity(intent)
+        true
+      } catch (e: ActivityNotFoundException) {
+        false
+      } catch (e: SecurityException) {
+        false
+      }
 
-  private fun installed(pm: PackageManager, pkg: String) = try {
-    pm.getPackageInfo(pkg, 0)
-    true
-  } catch (e: PackageManager.NameNotFoundException) {
-    false
+      val candidates: List<Intent> = when (target) {
+        "whatsapp" -> listOf("com.whatsapp", "com.whatsapp.w4b").map { pkg ->
+          send(pkg).apply { if (phone.isNotEmpty()) putExtra("jid", "$phone@s.whatsapp.net") }
+        }
+        // Instagram: its "Direct" entry first, then its general share screen.
+        "instagram" -> listOf(
+          send("com.instagram.android", "com.instagram.direct.share.handler.DirectShareHandlerActivity"),
+          send("com.instagram.android"),
+          send("com.instagram.lite"),
+        )
+        "facebook" -> listOf("com.facebook.orca", "com.facebook.mlite", "com.facebook.katana").map { send(it) }
+        "tiktok" -> listOf("com.zhiliaoapp.musically", "com.ss.android.ugc.trill", "com.zhiliaoapp.musically.go").map { send(it) }
+        else -> emptyList()
+      }
+      for (intent in candidates) {
+        if (tryStart(intent)) return@Function if (target == "whatsapp") "chat" else "app"
+      }
+      val chooser = Intent.createChooser(send(null), null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+      starter.startActivity(chooser)
+      "menu"
+    }
   }
 
   @RequiresApi(33)

@@ -9,6 +9,7 @@ import { Txt, Press, IconBtn, haptic } from '../components/ui';
 import { GOLD_GRAD, RED, CLEAR, shadow } from '../theme';
 import { listNotifications, markAllRead, markRead, logVisit } from '../api/account';
 import { listOrders } from '../api/orders';
+import { listPendingOrders } from '../api/pendingOrders';
 import { registerForNotifications, showLocalNotification, onNotificationTap, onNotificationReceived, setBadge } from '../lib/push';
 
 import useSharedText from '../lib/useSharedText';
@@ -76,6 +77,8 @@ export default function AppShell() {
 
   /* ---------- notifications ---------- */
   const poll = useCallback(async () => {
+    // Assistant badge stays current even before that tab is opened.
+    listPendingOrders().then((d) => setSmartCount((d.pendingOrders || []).length)).catch(() => {});
     try {
       const data = await listNotifications();
       const items = data.notifications || [];

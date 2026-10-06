@@ -12,6 +12,9 @@ import { formatTND } from '../lib/money';
 import { ltr } from '../lib/orderActions';
 import { GOLD, GREEN, GOLD_GRAD, STATUS_COLORS, PAY_COLORS } from '../theme';
 import { LinearGradient } from 'expo-linear-gradient';
+import BottomSheet from '../components/BottomSheet';
+import { loadScanLog, addToScanLog, updateScanLog, clearScanLog } from '../lib/scanLog';
+import { timeAgo } from '../lib/orderActions';
 import Svg, { Path } from 'react-native-svg';
 
 /** Pulls the order code out of whatever the QR contains. */
@@ -31,8 +34,13 @@ export default function ScanScreen({ onOpenOrder, onChanged }) {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState('');
   const [reading, setReading] = useState(false);
+  const [resultOpen, setResultOpen] = useState(false);
+  const [log, setLog] = useState([]);
   const lock = useRef(false);
   const line = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => { loadScanLog().then(setLog); }, []);
+  const show = (o) => { setResult(o); setResultOpen(true); };
 
   useEffect(() => {
     const loop = Animated.loop(Animated.sequence([
@@ -48,15 +56,15 @@ export default function ScanScreen({ onOpenOrder, onChanged }) {
     const code = codeFrom(raw);
     // Known order → shown at once; the server copy then refreshes it.
     const cached = findCached(code);
-    if (cached) { setResult(cached); setError(''); haptic('success'); }
+    if (cached) { show(cached); setError(''); haptic('success'); }
     try {
       const order = await findByCode(code);
-      setResult(order);
+      show(order);
       setError('');
       if (!cached) haptic('success');
     } catch (e) {
       if (cached && e.code === 'network') return; // offline: the cached copy stands
-      setResult(null);
+      setResultOpen(false);
       setError(t.notFound);
       haptic('error');
     }
@@ -89,7 +97,7 @@ export default function ScanScreen({ onOpenOrder, onChanged }) {
         data = img.base64;
         mimeType = 'image/jpeg';
       }
-      setResult(await findByFile(data, mimeType));
+      show(await findByFile(data, mimeType));
       haptic('success');
     } catch (e) {
       const msg = { too_big: t.fileTooBig, no_code: t.invoiceNoCode, ai_busy: t.aiBusy, ai_no_key: t.aiNoKey, network: t.offline }[e.code];
@@ -101,7 +109,7 @@ export default function ScanScreen({ onOpenOrder, onChanged }) {
   };
 
   const onScanned = ({ data }) => {
-    if (lock.current || result) return;
+    if (lock.current || resultOpen) return;
     lock.current = true;
     lookup(data).finally(() => setTimeout(() => { lock.current = false; }, 1500));
   };
@@ -111,6 +119,7 @@ export default function ScanScreen({ onOpenOrder, onChanged }) {
     try {
       const updated = await updateOrder(result.id, p);
       setResult(updated);
+      setLog((l) => updateScanLog(l, updated));
       onChanged?.();
       showToast(key === 'pay' ? t.pay_paid : t.st_delivered);
     } catch { showToast(t.error, 'error'); } finally { setBusy(''); }
@@ -127,7 +136,7 @@ export default function ScanScreen({ onOpenOrder, onChanged }) {
         {permission.granted ? (
           <>
             <CameraView style={StyleSheet.absoluteFill} barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
-              onBarcodeScanned={result ? undefined : onScanned} />
+              onBarcodeScanned={resultOpen ? undefined : onScanned} />
             <View pointerEvents="none" style={styles.frameWrap}>
               <FrameCorners />
               <Animated.View style={[styles.line, { transform: [{ translateY: line.interpolate({ inputRange: [0, 1], outputRange: [0, 190] }) }] }]} />
@@ -158,32 +167,63 @@ export default function ScanScreen({ onOpenOrder, onChanged }) {
 
       {!!error && <Txt w="b" color="#E0655B" style={{ textAlign: 'center', marginTop: 14 }}>{error}</Txt>}
 
-      {result && (
-        <Card style={{ marginTop: 16 }}>
-          <View style={{ alignItems: 'center' }}>
-            <View style={{ width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', backgroundColor: `${PAY_COLORS[result.pay]}22` }}>
-              <Ionicons name={result.pay === 'paid' ? 'checkmark-done' : 'time-outline'} size={32} color={PAY_COLORS[result.pay]} />
-            </View>
-            <Txt w="x" size={19} style={{ marginTop: 10 }}>{result.customer}</Txt>
-            <Txt size={12.5} color={th.muted}>{ltr(shortNo(result))} · {result.city || ltr(result.phone)}</Txt>
-            <Txt w="x" size={24} color={th.accent} style={{ marginTop: 6 }}>{formatTND(result.total)}</Txt>
-            <View style={{ flexDirection: 'row', gap: 6, marginTop: 10 }}>
-              <Tag label={t[`st_${result.status}`]} color={STATUS_COLORS[result.status]} />
-              <Tag label={t[`pay_${result.pay}`]} color={PAY_COLORS[result.pay]} />
-            </View>
+      {log.length > 0 && (
+        <View style={{ marginTop: 22 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <Txt w="b" size={16}>{t.scanLog}</Txt>
+            <Press onPress={() => setLog(clearScanLog())}><Txt w="b" size={12.5} color={th.muted}>{t.clearLog}</Txt></Press>
           </View>
-          {result.pay !== 'paid' && (
-            <Button title={t.markPaid} icon="cash-outline" onPress={() => patch({ pay: 'paid' }, 'pay')} loading={busy === 'pay'} style={{ marginTop: 16 }} />
-          )}
-          {result.status !== 'delivered' && (
-            <Button title={t.confirmDelivery} icon="checkmark-circle-outline" variant="dark" onPress={() => patch({ status: 'delivered' }, 'deliver')} loading={busy === 'deliver'} style={{ marginTop: 10 }} />
-          )}
-          <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
-            <Button small variant="ghost" title={t.openOrder} icon="open-outline" onPress={() => onOpenOrder(result)} style={{ flex: 1 }} />
-            <Button small variant="outline" title={t.scanAgain} icon="scan-outline" onPress={() => { setResult(null); setManual(''); }} style={{ flex: 1 }} />
-          </View>
-        </Card>
+          {log.map((e) => (
+            <Press key={e.id} onPress={() => lookup(e.code || e.id)}>
+              <Card style={{ marginBottom: 10, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}>
+                <Ionicons name={e.pay === 'paid' ? 'checkmark-done-circle' : 'time-outline'} size={26} color={PAY_COLORS[e.pay]} />
+                <View style={{ flex: 1 }}>
+                  <Txt w="b" size={14.5} numberOfLines={1}>{e.customer}</Txt>
+                  <Txt size={12} color={th.muted}>{ltr(shortNo(e))} · {timeAgo(e.at, t)}</Txt>
+                </View>
+                <View style={{ alignItems: 'flex-end', gap: 4 }}>
+                  <Txt w="x" size={14} color={th.accent}>{formatTND(e.total)}</Txt>
+                  <Tag label={t[`st_${e.status}`]} color={STATUS_COLORS[e.status]} />
+                </View>
+              </Card>
+            </Press>
+          ))}
+        </View>
       )}
+
+      {/* Scanned order: pay / deliver here, then keep it in the history or dismiss it. */}
+      <BottomSheet visible={resultOpen} onClose={() => setResultOpen(false)} title={t.scanResult}>
+        {result && (
+          <View style={{ paddingBottom: 6 }}>
+            <View style={{ alignItems: 'center' }}>
+              <View style={{ width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', backgroundColor: `${PAY_COLORS[result.pay]}22` }}>
+                <Ionicons name={result.pay === 'paid' ? 'checkmark-done' : 'time-outline'} size={32} color={PAY_COLORS[result.pay]} />
+              </View>
+              <Txt w="x" size={19} style={{ marginTop: 10 }}>{result.customer}</Txt>
+              <Txt size={12.5} color={th.muted}>{ltr(shortNo(result))} · {result.city || ltr(result.phone)}</Txt>
+              <Txt w="x" size={24} color={th.accent} style={{ marginTop: 6 }}>{formatTND(result.total)}</Txt>
+              <View style={{ flexDirection: 'row', gap: 6, marginTop: 10 }}>
+                <Tag label={t[`st_${result.status}`]} color={STATUS_COLORS[result.status]} />
+                <Tag label={t[`pay_${result.pay}`]} color={PAY_COLORS[result.pay]} />
+              </View>
+            </View>
+            {result.pay !== 'paid' && (
+              <Button title={t.markPaid} icon="cash-outline" onPress={() => patch({ pay: 'paid' }, 'pay')} loading={busy === 'pay'} style={{ marginTop: 16 }} />
+            )}
+            {result.status !== 'delivered' && (
+              <Button title={t.confirmDelivery} icon="checkmark-circle-outline" variant="dark" onPress={() => patch({ status: 'delivered' }, 'deliver')} loading={busy === 'deliver'} style={{ marginTop: 10 }} />
+            )}
+            <Button small variant="ghost" title={t.openOrder} icon="open-outline" style={{ marginTop: 10 }}
+              onPress={() => { setResultOpen(false); setTimeout(() => onOpenOrder(result), 320); }} />
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
+              <Button small variant="danger" icon="close" title={t.rejectOrder} style={{ flex: 0.4 }}
+                onPress={() => { setResultOpen(false); setManual(''); }} />
+              <Button small icon="add-circle-outline" title={t.addToLog} style={{ flex: 0.6 }}
+                onPress={() => { setLog((l) => addToScanLog(l, result)); setResultOpen(false); setManual(''); haptic('success'); }} />
+            </View>
+          </View>
+        )}
+      </BottomSheet>
     </ScrollView>
   );
 }
