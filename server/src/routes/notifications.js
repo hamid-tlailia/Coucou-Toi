@@ -41,7 +41,7 @@ router.put('/push-token', validate(tokenSchema), async (req, res) => {
 
 // "Send a test notification" button in Settings.
 router.post('/test', async (req, res) => {
-  await notify(req.user.id, { type: 'test', title: '🔔 Coco Love', body: 'الإشعارات تعمل بنجاح ✨' });
+  await notify(req.user.id, { type: 'test', title: '🔔 Coucou Toi', body: 'الإشعارات تعمل بنجاح ✨' });
   res.json({ ok: true, push: !!req.user.pushToken });
 });
 

@@ -6,7 +6,9 @@
  * a PendingOrder that a human approves (see routes/pendingOrders.js).
  */
 
-const EXTRACTION_PROMPT = `أنت مساعد استلام طلبات لمتجر تجارة إلكترونية على وسائل التواصل الاجتماعي.
+const { getCatalog } = require('../lib/catalog');
+
+const EXTRACTION_PROMPT = `أنت مساعد استلام طلبات لمتجر عطور على وسائل التواصل الاجتماعي (تونس).
 اقرأ رسالة العميل (وقد تكون نص، أو تفريغ رسالة صوتية، أو وصف صورة) واستخرج معلومات الطلب.
 أعد النتيجة بصيغة JSON فقط وفق هذا الشكل بالضبط، بدون أي نص إضافي:
 {
@@ -72,7 +74,11 @@ async function extractOrder({ text, imageUrl }) {
   if (!text && !imageUrl) return empty('empty');
 
   try {
-    const parts = [{ text: `${EXTRACTION_PROMPT}\n\nرسالة العميل:\n${text || '(بدون نص، انظر الصورة المرفقة)'}` }];
+    const catalog = await getCatalog();
+    const catalogText = catalog.length
+      ? `\n\nقائمة منتجات المتجر وأسعارها بالدينار (استعمل الاسم كما هو مكتوب هنا في حقل items، واحسب total من هذه الأسعار × الكمية إن لم يذكر العميل مبلغاً):\n${catalog.map((p) => `- ${p.name}: ${p.price}`).join('\n')}`
+      : '';
+    const parts = [{ text: `${EXTRACTION_PROMPT}${catalogText}\n\nرسالة العميل:\n${text || '(بدون نص، انظر الصورة المرفقة)'}` }];
 
     if (imageUrl) {
       const imgRes = await fetch(imageUrl);

@@ -5,6 +5,7 @@ import { usePrefs } from '../context/Prefs';
 import { Txt, Input, Chip, Button, haptic } from '../components/ui';
 import { SOURCES, PAY_KEYS, PAY_COLORS, RED } from '../theme';
 import { createOrder, updateOrder } from '../api/orders';
+import ProductPicker, { cartText, cartTotal } from '../components/ProductPicker';
 
 const EMPTY = { customer: '', phone: '', city: '', items: '', total: '', source: 'manual', pay: 'cod' };
 
@@ -14,16 +15,24 @@ export default function AddOrderSheet({ visible, editing, onClose, onSaved }) {
   const [f, setF] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
+  const [cart, setCart] = useState([]);
 
   useEffect(() => {
     if (!visible) return;
     setErr('');
+    setCart([]);
     setF(editing
       ? { customer: editing.customer, phone: editing.phone, city: editing.city || '', items: editing.items || '', total: String(editing.total), source: editing.source, pay: editing.pay }
       : EMPTY);
   }, [visible, editing]);
 
   const set = (k) => (v) => setF((s) => ({ ...s, [k]: v }));
+
+  // Picking perfumes fills in the products text and the total automatically.
+  const onCart = (next) => {
+    setCart(next);
+    setF((s) => ({ ...s, items: cartText(next), total: next.length ? String(cartTotal(next)) : s.total }));
+  };
 
   const save = async () => {
     const total = parseFloat(String(f.total).replace(',', '.'));
@@ -58,7 +67,8 @@ export default function AddOrderSheet({ visible, editing, onClose, onSaved }) {
       <Input label={`${t.customer} *`} icon="person-outline" value={f.customer} onChangeText={set('customer')} />
       <Input label={`${t.phone} *`} icon="call-outline" keyboardType="phone-pad" placeholder="22 123 456" value={f.phone} onChangeText={set('phone')} />
       <Input label={t.city} icon="location-outline" value={f.city} onChangeText={set('city')} />
-      <Input label={t.products} icon="pricetags-outline" value={f.items} onChangeText={set('items')} multiline placeholder="فستان أحمر M ×1" />
+      {!editing && <ProductPicker cart={cart} onChange={onCart} />}
+      <Input label={t.products} icon="pricetags-outline" value={f.items} onChangeText={set('items')} multiline placeholder="COUCOU TOI 100 ML ×1" />
       <Input label={`${t.amount} (د.ت) *`} icon="cash-outline" keyboardType="decimal-pad" placeholder="0.000" value={f.total} onChangeText={set('total')} />
 
       <Txt w="b" size={12.5} color={th.muted} style={{ marginTop: 14, marginBottom: 8 }}>{t.payStatus}</Txt>

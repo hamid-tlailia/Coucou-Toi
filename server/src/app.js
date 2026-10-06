@@ -17,6 +17,7 @@ const notificationRoutes = require('./routes/notifications');
 const dashboardRoutes = require('./routes/dashboard');
 const visitRoutes = require('./routes/visits');
 const trackingRoutes = require('./routes/tracking');
+const catalogRoutes = require('./routes/catalog');
 
 const app = express();
 
@@ -53,6 +54,7 @@ app.use('/billing', billingRoutes);
 app.use('/notifications', notificationRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/visits', visitRoutes);
+app.use('/catalog', catalogRoutes);
 app.use('/t', trackingRoutes); // public order-tracking page sent to customers
 app.use('/webhooks', webhookRoutes); // public — Meta/TikTok call these directly, auth is per-provider signature/token
 

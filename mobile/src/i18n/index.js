@@ -1,6 +1,6 @@
 const ar = {
   dir: 'rtl',
-  appName: 'Coco Love',
+  appName: 'Coucou Toi',
   // tabs
   tabHome: 'الرئيسية', tabOrders: 'الطلبات', tabSmart: 'المساعد', tabScan: 'المسح', tabProfile: 'الإعدادات',
   // common
@@ -12,7 +12,7 @@ const ar = {
   pay_paid: 'مدفوع', pay_unpaid: 'غير مدفوع', pay_cod: 'عند الاستلام',
   src_whatsapp: 'واتساب', src_instagram: 'انستغرام', src_facebook: 'فيسبوك', src_tiktok: 'تيك توك', src_manual: 'يدوي',
   // auth
-  welcome: 'أهلاً بك', authSub: 'إدارة طلبات متجرك بأناقة',
+  welcome: 'أهلاً بك', authSub: 'إدارة طلبات عطور Coucou Toi بأناقة',
   signIn: 'تسجيل الدخول', signUp: 'إنشاء حساب', email: 'البريد الإلكتروني', password: 'كلمة المرور',
   fullName: 'الاسم الكامل', storeName: 'اسم المتجر', haveAccount: 'لديك حساب؟ سجّل الدخول', noAccount: 'ليس لديك حساب؟ أنشئ واحداً',
   badEmail: 'بريد إلكتروني غير صالح', badPass: 'كلمة المرور ٨ أحرف على الأقل', badLogin: 'البريد أو كلمة المرور غير صحيحة', emailTaken: 'هذا البريد مستخدم مسبقاً',
@@ -54,7 +54,7 @@ const ar = {
   storeInfo: 'معلومات المتجر', storeInfoHint: 'تظهر على الفواتير وصفحة التتبع', storePhone: 'هاتف المتجر', storeAddress: 'عنوان المتجر',
   yourName: 'اسمك', saved: 'تم الحفظ', preferences: 'التفضيلات', language: 'اللغة', theme: 'المظهر', dark: 'داكن', light: 'فاتح',
   security: 'الأمان والإشعارات', appLock: 'قفل التطبيق بالبصمة', pushNotif: 'إشعارات الهاتف',
-  pushOn: 'مفعّلة', pushOff: 'غير مفعّلة', pushLocal: 'مفعّلة داخل التطبيق', testNotif: 'إرسال إشعار تجريبي', testSent: 'تم الإرسال — سيصلك الإشعار خلال ثوانٍ', logout: 'تسجيل الخروج', server: 'الخادم', version: 'الإصدار',
+  pushOn: 'مفعّلة', pushOff: 'غير مفعّلة', pushLocal: 'مفعّلة داخل التطبيق', testNotif: 'إرسال إشعار تجريبي', pickProducts: 'اختر العطور', notOnSite: 'غير متوفر بالموقع', testSent: 'تم الإرسال — سيصلك الإشعار خلال ثوانٍ', logout: 'تسجيل الخروج', server: 'الخادم', version: 'الإصدار',
   timeAgoNow: 'الآن', minutes: 'د', hours: 'س',
 };
 
@@ -67,7 +67,7 @@ const en = {
   st_new: 'New', st_processing: 'Preparing', st_shipped: 'Shipped', st_delivered: 'Delivered',
   pay_paid: 'Paid', pay_unpaid: 'Unpaid', pay_cod: 'Cash on delivery',
   src_whatsapp: 'WhatsApp', src_instagram: 'Instagram', src_facebook: 'Facebook', src_tiktok: 'TikTok', src_manual: 'Manual',
-  welcome: 'Welcome', authSub: 'Manage your store orders, elegantly',
+  welcome: 'Welcome', authSub: 'Manage Coucou Toi perfume orders, elegantly',
   signIn: 'Sign in', signUp: 'Create account', email: 'Email', password: 'Password',
   fullName: 'Full name', storeName: 'Store name', haveAccount: 'Have an account? Sign in', noAccount: 'No account? Create one',
   badEmail: 'Invalid email', badPass: 'Password must be 8+ characters', badLogin: 'Wrong email or password', emailTaken: 'Email already in use',
@@ -102,7 +102,7 @@ const en = {
   storeInfo: 'Store details', storeInfoHint: 'Shown on invoices and the tracking page', storePhone: 'Store phone', storeAddress: 'Store address',
   yourName: 'Your name', saved: 'Saved', preferences: 'Preferences', language: 'Language', theme: 'Theme', dark: 'Dark', light: 'Light',
   security: 'Security & notifications', appLock: 'Biometric app lock', pushNotif: 'Phone notifications',
-  pushOn: 'On', pushOff: 'Off', pushLocal: 'In-app only', testNotif: 'Send a test notification', testSent: 'Sent — it should arrive in a few seconds', logout: 'Sign out', server: 'Server', version: 'Version',
+  pushOn: 'On', pushOff: 'Off', pushLocal: 'In-app only', testNotif: 'Send a test notification', pickProducts: 'Pick perfumes', notOnSite: 'Sold out online', testSent: 'Sent — it should arrive in a few seconds', logout: 'Sign out', server: 'Server', version: 'Version',
   timeAgoNow: 'now', minutes: 'm', hours: 'h',
 };
 
