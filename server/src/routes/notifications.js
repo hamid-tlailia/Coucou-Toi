@@ -4,11 +4,14 @@ const { prisma } = require('../lib/db');
 const { requireAuth } = require('../middleware/auth');
 const { validate } = require('../middleware/validate');
 const { notify } = require('../lib/notify');
+const { syncStock } = require('../lib/stock');
+const { background } = require('../lib/background');
 
 const router = express.Router();
 router.use(requireAuth);
 
 router.get('/', async (req, res) => {
+  background(syncStock()); // website stock changes → notifications (throttled)
   const [items, unread] = await Promise.all([
     prisma.notification.findMany({ where: { userId: req.user.id }, orderBy: { createdAt: 'desc' }, take: 60 }),
     prisma.notification.count({ where: { userId: req.user.id, readAt: null } }),

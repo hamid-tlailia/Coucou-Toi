@@ -5,6 +5,7 @@ const { requireAuth } = require('../middleware/auth');
 const { validate } = require('../middleware/validate');
 const { withQuota } = require('../middleware/quota');
 const { trackingCode } = require('../lib/tracking');
+const { annotate } = require('../lib/stock');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -36,7 +37,7 @@ router.get('/', async (req, res) => {
   }
 
   const orders = await prisma.order.findMany({ where, orderBy: { date: 'desc' }, take: 200 });
-  res.json({ orders: orders.map(serialize) });
+  res.json({ orders: await annotate(orders.map(serialize)) });
 });
 
 router.get('/stats', async (req, res) => {
@@ -63,7 +64,7 @@ router.get('/lookup/:code', async (req, res) => {
     order = await prisma.order.findFirst({ where: { userId: req.user.id, id: { endsWith: term.toLowerCase() } } });
   }
   if (!order) return res.status(404).json({ error: 'not_found' });
-  res.json(serialize(order));
+  res.json((await annotate([serialize(order)]))[0]);
 });
 
 const createSchema = z.object({
@@ -102,7 +103,7 @@ router.post('/', validate(createSchema), async (req, res) => {
       });
       return tx.order.update({ where: { id: created.id }, data: { code: trackingCode(created.id) } });
     });
-    res.status(201).json(serialize(order));
+    res.status(201).json((await annotate([serialize(order)]))[0]);
   } catch (e) {
     if (e.status === 402) return res.status(402).json({ error: 'quota_exceeded' });
     throw e;
@@ -123,7 +124,7 @@ router.patch('/:id', validate(patchSchema), async (req, res) => {
   const existing = await prisma.order.findFirst({ where: { id: req.params.id, userId: req.user.id } });
   if (!existing) return res.status(404).json({ error: 'not_found' });
   const updated = await prisma.order.update({ where: { id: existing.id }, data: req.body });
-  res.json(serialize(updated));
+  res.json((await annotate([serialize(updated)]))[0]);
 });
 
 router.delete('/:id', async (req, res) => {

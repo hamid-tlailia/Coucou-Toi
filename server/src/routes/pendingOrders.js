@@ -8,6 +8,9 @@ const { trackingCode } = require('../lib/tracking');
 const { serialize: serializeOrder } = require('./orders');
 const { processIncomingMessage } = require('../services/aiPipeline');
 const { notify } = require('../lib/notify');
+const { annotate } = require('../lib/stock');
+const { getCatalog } = require('../lib/catalog');
+const { outOfStockIn } = require('../lib/stock');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -20,7 +23,7 @@ router.get('/', async (req, res) => {
     orderBy: { createdAt: 'desc' },
     take: 200,
   });
-  res.json({ pendingOrders: pending.map(serialize) });
+  res.json({ pendingOrders: await annotate(pending.map(serialize)) });
 });
 
 /*
@@ -49,7 +52,8 @@ router.post('/from-text', validate(fromTextSchema), async (req, res) => {
       confidence: draft.confidence,
     },
   });
-  res.status(201).json({ ...serialize(pending), aiStatus: draft.aiStatus });
+  const [annotated] = await annotate([serialize(pending)]);
+  res.status(201).json({ ...annotated, aiStatus: draft.aiStatus });
 });
 
 /*
@@ -130,10 +134,11 @@ function serialize(p) {
   };
 }
 
-function notifyNewDraft(p) {
+async function notifyNewDraft(p) {
+  const missing = outOfStockIn(p.items, await getCatalog());
   return notify(p.userId, {
     type: 'new_draft',
-    title: '🤖 طلب جديد من البائع الذكي',
+    title: missing.length ? '🤖⚠️ طلب جديد لعطر غير متوفر' : '🤖 طلب جديد من البائع الذكي',
     body: [p.customer, p.items].filter(Boolean).join(' — ') || 'رسالة جديدة بانتظار مراجعتك',
   });
 }

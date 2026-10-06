@@ -4,7 +4,7 @@
  * any manual entry. Cached in memory for a few minutes per server instance.
  */
 const SHOP_URL = (process.env.SHOP_URL || 'https://aronaperfume.com').replace(/\/+$/, '');
-const TTL_MS = 10 * 60 * 1000;
+const TTL_MS = 3 * 60 * 1000;
 
 let cache = { at: 0, items: [] };
 

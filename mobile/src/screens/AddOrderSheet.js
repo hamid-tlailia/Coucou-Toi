@@ -68,6 +68,9 @@ export default function AddOrderSheet({ visible, editing, onClose, onSaved }) {
       <Input label={`${t.phone} *`} icon="call-outline" keyboardType="phone-pad" placeholder="22 123 456" value={f.phone} onChangeText={set('phone')} />
       <Input label={t.city} icon="location-outline" value={f.city} onChangeText={set('city')} />
       {!editing && <ProductPicker cart={cart} onChange={onCart} />}
+      {cart.some((l) => !l.available) && (
+        <Txt w="b" size={12.5} color={RED} style={{ marginTop: 8 }}>⚠️ {t.cartUnavailable}</Txt>
+      )}
       <Input label={t.products} icon="pricetags-outline" value={f.items} onChangeText={set('items')} multiline placeholder="COUCOU TOI 100 ML ×1" />
       <Input label={`${t.amount} (د.ت) *`} icon="cash-outline" keyboardType="decimal-pad" placeholder="0.000" value={f.total} onChangeText={set('total')} />
 

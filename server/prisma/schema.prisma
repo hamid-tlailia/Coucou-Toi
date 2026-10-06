@@ -205,3 +205,12 @@ model Visit {
 
   @@index([userId, createdAt])
 }
+
+// Last known availability of each store product (from the website), so a
+// change (sold out / back in stock) can be detected and notified once.
+model ProductStock {
+  id        String   @id // Shopify variant id
+  name      String
+  available Boolean
+  updatedAt DateTime @updatedAt
+}

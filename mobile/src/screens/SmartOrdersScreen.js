@@ -3,6 +3,7 @@ import { View, FlatList, RefreshControl, ScrollView } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
 import { usePrefs } from '../context/Prefs';
+import StockAlert from '../components/StockAlert';
 import { Txt, Card, Input, Chip, Button, Press, Tag, Empty, Skeleton, haptic } from '../components/ui';
 import { SOURCES, PAY_KEYS, PAY_COLORS, srcOf, GOLD, GREEN, RED } from '../theme';
 import { formatTND } from '../lib/money';
@@ -150,6 +151,8 @@ function DraftCard({ draft, onApprove, onReject }) {
       <Txt w="b" size={16} style={{ marginTop: 10 }}>{draft.customer || '—'}</Txt>
       <Txt size={13} color={th.muted} style={{ marginTop: 2 }}>{[draft.city, draft.items].filter(Boolean).join(' · ') || '—'}</Txt>
       {draft.total != null && <Txt w="x" size={17} color={th.accent} style={{ marginTop: 4 }}>{formatTND(draft.total)}</Txt>}
+
+      <StockAlert order={draft} compact />
 
       {!!draft.rawText && (
         <View style={{ backgroundColor: th.raised, borderRadius: 14, padding: 11, marginTop: 10 }}>

@@ -88,6 +88,7 @@ export default function AppShell() {
   const openFromNotification = useCallback(async (n) => {
     setNotifOpen(false);
     if (n.type === 'new_draft') return go('smart');
+    if (n.type === 'out_of_stock' || n.type === 'back_in_stock') return go('orders');
     if (n.orderId) {
       try {
         const { orders } = await listOrders({ search: n.orderId });

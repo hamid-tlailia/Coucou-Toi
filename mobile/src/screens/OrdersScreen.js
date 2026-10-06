@@ -3,7 +3,7 @@ import { View, FlatList, ScrollView, RefreshControl, Platform } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import { usePrefs } from '../context/Prefs';
 import { Txt, Input, Chip, Press, Tag, Skeleton, Empty } from '../components/ui';
-import { SOURCES, STATUS_KEYS, STATUS_COLORS, PAY_COLORS, srcOf, GOLD } from '../theme';
+import { SOURCES, STATUS_KEYS, STATUS_COLORS, PAY_COLORS, srcOf, GOLD, RED } from '../theme';
 import { formatTND } from '../lib/money';
 import { listOrders, shortNo } from '../api/orders';
 import { timeAgo, ltr } from '../lib/orderActions';
@@ -103,6 +103,7 @@ export const OrderCard = memo(function OrderCard({ order, onPress }) {
       <View style={{ flexDirection: 'row', gap: 6, marginTop: 12 }}>
         <Tag label={t[`st_${order.status}`]} color={STATUS_COLORS[order.status]} />
         <Tag label={t[`pay_${order.pay}`]} color={PAY_COLORS[order.pay]} icon={order.pay === 'paid' ? 'checkmark-circle' : 'time-outline'} />
+        {!!order.outOfStock?.length && <Tag label={t.unavailableTag} color={RED} icon="alert-circle" />}
       </View>
     </Press>
   );

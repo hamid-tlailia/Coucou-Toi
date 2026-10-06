@@ -54,7 +54,10 @@ const ar = {
   storeInfo: 'معلومات المتجر', storeInfoHint: 'تظهر على الفواتير وصفحة التتبع', storePhone: 'هاتف المتجر', storeAddress: 'عنوان المتجر',
   yourName: 'اسمك', saved: 'تم الحفظ', preferences: 'التفضيلات', language: 'اللغة', theme: 'المظهر', dark: 'داكن', light: 'فاتح',
   security: 'الأمان والإشعارات', appLock: 'قفل التطبيق بالبصمة', pushNotif: 'إشعارات الهاتف',
-  pushOn: 'مفعّلة', pushOff: 'غير مفعّلة', pushLocal: 'مفعّلة داخل التطبيق', testNotif: 'إرسال إشعار تجريبي', pickProducts: 'اختر العطور', notOnSite: 'غير متوفر بالموقع', testSent: 'تم الإرسال — سيصلك الإشعار خلال ثوانٍ', logout: 'تسجيل الخروج', server: 'الخادم', version: 'الإصدار',
+  pushOn: 'مفعّلة', pushOff: 'غير مفعّلة', pushLocal: 'مفعّلة داخل التطبيق', testNotif: 'إرسال إشعار تجريبي', pickProducts: 'اختر العطور', notOnSite: 'غير متوفر بالموقع',
+  outOfStockTitle: 'عطر غير متوفر حالياً على الموقع', unavailableTag: 'غير متوفر', notifyWa: 'إبلاغ عبر واتساب', notifyCopy: 'نسخ وفتح الرسائل',
+  msgCopied: 'تم نسخ الرسالة — الصقها في محادثة العميل', cartUnavailable: 'بعض العطور المختارة غير متوفرة حالياً على الموقع',
+  stockMsg: 'مرحباً {name} 🌸\nنعتذر منك، عطر {items} غير متوفر حالياً.\n\nالعطور المتوفرة الآن:\n{available}\n\nهل تحب تختار عطراً من المتوفر، أم تفضّل الانتظار حتى يعود؟ 🤍', testSent: 'تم الإرسال — سيصلك الإشعار خلال ثوانٍ', logout: 'تسجيل الخروج', server: 'الخادم', version: 'الإصدار',
   timeAgoNow: 'الآن', minutes: 'د', hours: 'س',
 };
 
@@ -102,7 +105,10 @@ const en = {
   storeInfo: 'Store details', storeInfoHint: 'Shown on invoices and the tracking page', storePhone: 'Store phone', storeAddress: 'Store address',
   yourName: 'Your name', saved: 'Saved', preferences: 'Preferences', language: 'Language', theme: 'Theme', dark: 'Dark', light: 'Light',
   security: 'Security & notifications', appLock: 'Biometric app lock', pushNotif: 'Phone notifications',
-  pushOn: 'On', pushOff: 'Off', pushLocal: 'In-app only', testNotif: 'Send a test notification', pickProducts: 'Pick perfumes', notOnSite: 'Sold out online', testSent: 'Sent — it should arrive in a few seconds', logout: 'Sign out', server: 'Server', version: 'Version',
+  pushOn: 'On', pushOff: 'Off', pushLocal: 'In-app only', testNotif: 'Send a test notification', pickProducts: 'Pick perfumes', notOnSite: 'Sold out online',
+  outOfStockTitle: 'Perfume currently sold out online', unavailableTag: 'Sold out', notifyWa: 'Tell on WhatsApp', notifyCopy: 'Copy & open inbox',
+  msgCopied: 'Message copied — paste it in the customer chat', cartUnavailable: 'Some selected perfumes are sold out online',
+  stockMsg: 'Hello {name} 🌸\nSorry, {items} is currently out of stock.\n\nAvailable now:\n{available}\n\nWould you like to pick an available perfume, or wait until it is back? 🤍', testSent: 'Sent — it should arrive in a few seconds', logout: 'Sign out', server: 'Server', version: 'Version',
   timeAgoNow: 'now', minutes: 'm', hours: 'h',
 };
 

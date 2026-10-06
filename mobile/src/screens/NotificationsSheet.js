@@ -5,10 +5,13 @@ import BottomSheet from '../components/BottomSheet';
 import { usePrefs } from '../context/Prefs';
 import { Txt, Press, Empty, Button } from '../components/ui';
 import { timeAgo } from '../lib/orderActions';
-import { GOLD, GREEN, BLUE, PLUM } from '../theme';
+import { GOLD, GREEN, BLUE, PLUM, RED } from '../theme';
 
 const ICON = {
   new_draft: ['sparkles', GOLD],
+  out_of_stock: ['alert-circle', RED],
+  back_in_stock: ['checkmark-circle', GREEN],
+  test: ['notifications', GOLD],
   tracking_viewed: ['eye', BLUE],
   order_paid: ['cash', GREEN],
   order_delivered: ['checkmark-done', GREEN],

@@ -3,6 +3,7 @@ import { View, Alert } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
 import BottomSheet from '../components/BottomSheet';
+import StockAlert from '../components/StockAlert';
 import { usePrefs } from '../context/Prefs';
 import { Txt, Press, Chip, Button, Divider, haptic } from '../components/ui';
 import { STATUS_KEYS, STATUS_COLORS, PAY_KEYS, PAY_COLORS, srcOf, GREEN } from '../theme';
@@ -54,6 +55,8 @@ export default function OrderSheet({ order: initial, onClose, onChanged, onInvoi
         <Txt size={13} color={th.muted} style={{ marginTop: 2 }}>{ltr(shortNo(order))} · {ltr(order.phone)}</Txt>
         <Txt w="x" size={28} color={th.accent} style={{ marginTop: 8 }}>{formatTND(order.total)}</Txt>
       </View>
+
+      <StockAlert order={order} />
 
       {(order.items || order.city) && (
         <View style={{ backgroundColor: th.surface, borderRadius: 18, padding: 14, marginTop: 16, borderWidth: 1, borderColor: th.border, gap: 8 }}>

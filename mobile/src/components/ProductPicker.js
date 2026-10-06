@@ -27,7 +27,7 @@ export default function ProductPicker({ cart, onChange }) {
   const add = (p) => {
     const i = cart.findIndex((l) => l.id === p.id);
     if (i >= 0) onChange(cart.map((l, j) => (j === i ? { ...l, qty: l.qty + 1 } : l)));
-    else onChange([...cart, { id: p.id, name: p.name, price: p.price, qty: 1 }]);
+    else onChange([...cart, { id: p.id, name: p.name, price: p.price, qty: 1, available: p.available }]);
   };
   const setQty = (id, qty) => onChange(qty <= 0 ? cart.filter((l) => l.id !== id) : cart.map((l) => (l.id === id ? { ...l, qty } : l)));
 
