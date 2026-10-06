@@ -70,6 +70,7 @@ const approveSchema = z.object({
   items: z.string().trim().max(500).optional(),
   total: z.number().nonnegative().max(1_000_000).optional(),
   pay: z.enum(['paid', 'unpaid', 'cod']).optional(),
+  source: z.enum(['whatsapp', 'instagram', 'facebook', 'tiktok', 'manual']).optional(),
 });
 
 router.post('/:id/approve', validate(approveSchema), async (req, res) => {
@@ -94,7 +95,7 @@ router.post('/:id/approve', validate(approveSchema), async (req, res) => {
           city: req.body.city ?? draft.city ?? null,
           items: req.body.items ?? draft.items ?? null,
           total,
-          source: draft.source,
+          source: req.body.source ?? draft.source,
           pay: req.body.pay ?? draft.pay ?? 'cod',
           code: '',
         },

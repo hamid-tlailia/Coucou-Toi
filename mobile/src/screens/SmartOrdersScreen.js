@@ -9,7 +9,7 @@ import { SOURCES, PAY_KEYS, PAY_COLORS, srcOf, GOLD, GREEN, RED } from '../theme
 import { formatTND } from '../lib/money';
 import { listPendingOrders, approvePendingOrder, rejectPendingOrder, draftFromText } from '../api/pendingOrders';
 
-export default function SmartOrdersScreen({ refreshKey, onApproved, onCountChange }) {
+export default function SmartOrdersScreen({ refreshKey, shared, onApproved, onCountChange }) {
   const { t, th, showToast } = usePrefs();
   const [drafts, setDrafts] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -31,11 +31,11 @@ export default function SmartOrdersScreen({ refreshKey, onApproved, onCountChang
 
   useEffect(() => { fetchDrafts(); }, [refreshKey]);
 
-  const extract = async () => {
-    if (text.trim().length < 3) return;
+  const extract = async (input = text) => {
+    if (input.trim().length < 3) return;
     setExtracting(true);
     try {
-      const draft = await draftFromText(text.trim(), source);
+      const draft = await draftFromText(input.trim(), source);
       setDrafts((ds) => [draft, ...(ds || [])]);
       onCountChange?.((drafts?.length || 0) + 1);
       setText('');
@@ -48,6 +48,14 @@ export default function SmartOrdersScreen({ refreshKey, onApproved, onCountChang
       setExtracting(false);
     }
   };
+
+  // Text shared into the app from another app's Share menu → analyse at once.
+  useEffect(() => {
+    if (!shared?.text) return;
+    setText(shared.text);
+    showToast(t.sharedReceived, 'info');
+    extract(shared.text);
+  }, [shared?.at]);
 
   const remove = (id) => setDrafts((ds) => {
     const next = ds.filter((d) => d.id !== id);
@@ -93,7 +101,7 @@ export default function SmartOrdersScreen({ refreshKey, onApproved, onCountChang
           <Button small variant="ghost" icon="clipboard-outline" title={t.paste} style={{ flex: 0.4 }}
             onPress={async () => setText(await Clipboard.getStringAsync())} />
           <Button small icon="sparkles-outline" title={extracting ? t.extracting : t.extract} loading={extracting}
-            disabled={text.trim().length < 3} onPress={extract} style={{ flex: 0.6 }} />
+            disabled={text.trim().length < 3} onPress={() => extract()} style={{ flex: 0.6 }} />
         </View>
       </Card>
       <Txt w="b" size={16.5} style={{ marginBottom: 12 }}>{t.drafts}{drafts?.length ? ` (${drafts.length})` : ''}</Txt>
@@ -118,12 +126,11 @@ export default function SmartOrdersScreen({ refreshKey, onApproved, onCountChang
 
 function DraftCard({ draft, onApprove, onReject }) {
   const { t, th } = usePrefs();
-  const src = srcOf(draft.source);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [f, setF] = useState({
     customer: draft.customer || '', phone: draft.phone || '', city: [draft.city, draft.address].filter(Boolean).join(' - '),
-    items: draft.items || '', total: draft.total != null ? String(draft.total) : '', pay: draft.pay || 'cod',
+    items: draft.items || '', total: draft.total != null ? String(draft.total) : '', pay: draft.pay || 'cod', source: draft.source,
   });
   const pct = Math.round((draft.confidence ?? 0) * 100);
   const pctColor = pct >= 70 ? GREEN : pct >= 40 ? GOLD : RED;
@@ -132,7 +139,7 @@ function DraftCard({ draft, onApprove, onReject }) {
   const approve = async () => {
     setBusy(true);
     const total = parseFloat(String(f.total).replace(',', '.'));
-    const body = { pay: f.pay };
+    const body = { pay: f.pay, source: f.source };
     if (f.customer.trim()) body.customer = f.customer.trim();
     if (f.phone.trim()) body.phone = f.phone.trim();
     if (f.city.trim()) body.city = f.city.trim();
@@ -145,7 +152,7 @@ function DraftCard({ draft, onApprove, onReject }) {
   return (
     <Card style={{ marginBottom: 12 }}>
       <View style={{ flexDirection: 'row', gap: 6 }}>
-        <Tag label={t[`src_${draft.source}`]} color={src.color} icon={src.icon} />
+        <Tag label={t[`src_${f.source}`]} color={srcOf(f.source).color} icon={srcOf(f.source).icon} />
         <Tag label={`${t.confidence} ${pct}%`} color={pctColor} />
       </View>
       <Txt w="b" size={16} style={{ marginTop: 10 }}>{draft.customer || '—'}</Txt>
@@ -168,6 +175,12 @@ function DraftCard({ draft, onApprove, onReject }) {
 
       {open && (
         <View>
+          <Txt w="b" size={12.5} color={th.muted} style={{ marginTop: 12, marginBottom: 8 }}>{t.source}</Txt>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {SOURCES.map((s) => (
+              <Chip key={s.key} label={t[`src_${s.key}`]} icon={s.icon} color={s.color} active={f.source === s.key} onPress={() => set('source')(s.key)} />
+            ))}
+          </ScrollView>
           <Input label={t.customer} value={f.customer} onChangeText={set('customer')} />
           <Input label={t.phone} keyboardType="phone-pad" value={f.phone} onChangeText={set('phone')} />
           <Input label={t.city} value={f.city} onChangeText={set('city')} />

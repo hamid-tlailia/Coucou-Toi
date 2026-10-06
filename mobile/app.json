@@ -81,7 +81,16 @@
           "backgroundColor": "#120C14"
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-share-intent",
+        {
+          "androidIntentFilters": [
+            "text/*"
+          ],
+          "disableIOS": true
+        }
+      ]
     ],
     "extra": {
       "supportsRTL": true,

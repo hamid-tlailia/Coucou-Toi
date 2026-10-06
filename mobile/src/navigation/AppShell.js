@@ -11,6 +11,7 @@ import { listNotifications, markAllRead, markRead, logVisit } from '../api/accou
 import { listOrders } from '../api/orders';
 import { registerForNotifications, showLocalNotification, onNotificationTap, onNotificationReceived, setBadge } from '../lib/push';
 
+import useSharedText from '../lib/useSharedText';
 import DashboardScreen from '../screens/DashboardScreen';
 import OrdersScreen from '../screens/OrdersScreen';
 import SmartOrdersScreen from '../screens/SmartOrdersScreen';
@@ -47,6 +48,7 @@ export default function AppShell() {
   const [notifs, setNotifs] = useState({ unread: 0, items: [] });
   const [smartCount, setSmartCount] = useState(0);
   const [pushMode, setPushMode] = useState(null);
+  const [shared, setShared] = useState(null); // text shared from WhatsApp/Instagram/… via the Share menu
 
   const pushModeRef = useRef(null);
   const lastSeen = useRef(null);
@@ -62,6 +64,9 @@ export default function AppShell() {
     setVisited((v) => ({ ...v, [key]: true }));
     setTab(key);
   }, []);
+
+  // Share menu → Assistant tab, analysed right away.
+  useSharedText((text) => { setShared({ text, at: Date.now() }); go('smart'); });
 
   /* ---------- notifications ---------- */
   const poll = useCallback(async () => {
@@ -156,7 +161,7 @@ export default function AppShell() {
     switch (key) {
       case 'home': return <DashboardScreen refreshKey={refreshKey} goTo={go} />;
       case 'orders': return <OrdersScreen refreshKey={refreshKey} onOpenOrder={setDetail} />;
-      case 'smart': return <SmartOrdersScreen refreshKey={refreshKey} onCountChange={setSmartCount} onApproved={(o) => { refresh(); setTimeout(() => setInvoice(o), 200); }} />;
+      case 'smart': return <SmartOrdersScreen refreshKey={refreshKey} shared={shared} onCountChange={setSmartCount} onApproved={(o) => { refresh(); setTimeout(() => setInvoice(o), 200); }} />;
       case 'scan': return <ScanScreen onOpenOrder={setDetail} onChanged={refresh} />;
       case 'profile': return <ProfileScreen pushMode={pushMode} onEnablePush={enablePush} />;
       default: return null;
