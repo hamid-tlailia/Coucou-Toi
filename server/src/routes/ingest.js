@@ -34,7 +34,7 @@ router.post('/token', requireAuth, async (req, res) => {
 async function requireIngestKey(req, res, next) {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : '';
-  const user = token && await prisma.user.findUnique({ where: { ingestTokenHash: sha256(token) } });
+  const user = token && await prisma.user.findFirst({ where: { ingestTokenHash: sha256(token) } });
   if (!user) return res.status(401).json({ error: 'unauthorized' });
   req.user = user;
   next();
