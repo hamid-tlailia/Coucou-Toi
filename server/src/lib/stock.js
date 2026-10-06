@@ -1,5 +1,6 @@
 const { prisma } = require('./db');
-const { getCatalog } = require('./catalog');
+const { getCatalog, freshCatalog } = require('./catalog');
+const { background } = require('./background');
 const { notify } = require('./notify');
 
 const OPEN_STATUSES = ['new', 'processing'];
@@ -23,7 +24,13 @@ function outOfStockIn(itemsText, catalog) {
 
 /** Adds `outOfStock: [names]` to serialized orders/drafts. */
 async function annotate(list) {
-  const catalog = await getCatalog();
+  // Don't make a lookup wait on the shop: on a cold server use the last
+  // availability stored in the database and refresh the catalog meanwhile.
+  let catalog = freshCatalog();
+  if (!catalog) {
+    background(getCatalog());
+    catalog = await prisma.productStock.findMany({ select: { name: true, available: true } });
+  }
   return list.map((o) => ({ ...o, outOfStock: outOfStockIn(o.items, catalog) }));
 }
 

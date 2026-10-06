@@ -54,6 +54,7 @@ export function invoiceHtml({ order, user, t }) {
   .total .k { font-size: 11px; color: #F0D49A; letter-spacing: 1px; font-weight: 800 }
   .total .v { font-size: 26px; font-weight: 800; margin-top: 2px }
   .stamp { display: inline-block; margin-top: 12px; border: 2px solid ${STAMP[order.pay]}; color: ${STAMP[order.pay]}; padding: 5px 14px; border-radius: 8px; font-weight: 800; font-size: 13px; transform: rotate(-4deg) }
+  .ref { font-size: 1px; color: #fff; line-height: 1px } /* invisible; lets an uploaded PDF be matched instantly */
   .qr { text-align: center } .qr .h { font-size: 10px; color: #8A7A84; margin-top: 4px }
   .thanks { text-align: center; margin-top: 26px; font-size: 13px; color: #6E6170 }
   .line { height: 1px; background: linear-gradient(90deg,transparent,#D4AF6A,transparent); margin-top: 14px }
@@ -83,6 +84,7 @@ export function invoiceHtml({ order, user, t }) {
   </div>
   <div class="line"></div>
   <div class="thanks">${esc(t.thanks)}</div>
+  <div class="ref" dir="ltr">CT-REF:${esc(order.code)}</div>
 </div></body></html>`;
 }
 

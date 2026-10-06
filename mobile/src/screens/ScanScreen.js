@@ -7,7 +7,7 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import { Ionicons } from '@expo/vector-icons';
 import { usePrefs } from '../context/Prefs';
 import { Txt, Input, Button, Card, Tag, Press, haptic } from '../components/ui';
-import { findByCode, findByFile, updateOrder, shortNo } from '../api/orders';
+import { findByCode, findByFile, findCached, updateOrder, shortNo } from '../api/orders';
 import { formatTND } from '../lib/money';
 import { ltr } from '../lib/orderActions';
 import { GOLD, GREEN, GOLD_GRAD, STATUS_COLORS, PAY_COLORS } from '../theme';
@@ -45,12 +45,17 @@ export default function ScanScreen({ onOpenOrder, onChanged }) {
 
   const lookup = async (raw) => {
     if (!raw?.trim()) return;
+    const code = codeFrom(raw);
+    // Known order → shown at once; the server copy then refreshes it.
+    const cached = findCached(code);
+    if (cached) { setResult(cached); setError(''); haptic('success'); }
     try {
-      const order = await findByCode(codeFrom(raw));
+      const order = await findByCode(code);
       setResult(order);
       setError('');
-      haptic('success');
-    } catch {
+      if (!cached) haptic('success');
+    } catch (e) {
+      if (cached && e.code === 'network') return; // offline: the cached copy stands
       setResult(null);
       setError(t.notFound);
       haptic('error');
@@ -121,7 +126,7 @@ export default function ScanScreen({ onOpenOrder, onChanged }) {
       <View style={[styles.cam, { borderColor: th.border, backgroundColor: '#000' }]}>
         {permission.granted ? (
           <>
-            <CameraView style={StyleSheet.absoluteFill} barcodeScannerSettings={{ barcodeTypes: ['qr', 'code128'] }}
+            <CameraView style={StyleSheet.absoluteFill} barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
               onBarcodeScanned={result ? undefined : onScanned} />
             <View pointerEvents="none" style={styles.frameWrap}>
               <FrameCorners />

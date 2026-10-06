@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import BottomSheet from '../components/BottomSheet';
@@ -8,7 +8,8 @@ import { Txt, Button } from '../components/ui';
 import QR from '../lib/QR';
 import { formatTND } from '../lib/money';
 import { shareInvoicePdf, printInvoice } from '../lib/invoice';
-import { sendWhatsApp, ltr } from '../lib/orderActions';
+import { ltr } from '../lib/orderActions';
+import { sendInvoiceImage } from '../lib/sendInvoice';
 import { shortNo } from '../api/orders';
 import { trackingUrl } from '../config';
 import { PAY_COLORS, GOLD_GRAD } from '../theme';
@@ -18,6 +19,7 @@ export default function InvoiceSheet({ order, onClose }) {
   const { t, showToast } = usePrefs();
   const { user } = useAuth();
   const [busy, setBusy] = useState('');
+  const paper = useRef(null);
   if (!order) return <BottomSheet visible={false} onClose={onClose} />;
 
   const run = (key, fn) => async () => {
@@ -32,7 +34,8 @@ export default function InvoiceSheet({ order, onClose }) {
   return (
     <BottomSheet visible={!!order} onClose={onClose}>
       {/* Paper preview — always light, like the real document */}
-      <View style={{ backgroundColor: '#FFFDF9', borderRadius: 22, overflow: 'hidden', marginTop: 6 }}>
+      {/* Also the picture sent to the customer (captured as is). */}
+      <View ref={paper} collapsable={false} style={{ backgroundColor: '#FFFDF9', borderRadius: 22, overflow: 'hidden', marginTop: 6 }}>
         <LinearGradient colors={GOLD_GRAD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ height: 6 }} />
         <View style={{ padding: 18 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 14 }}>
@@ -74,7 +77,9 @@ export default function InvoiceSheet({ order, onClose }) {
 
       <Button title={t.sharePdf} icon="share-outline" onPress={run('pdf', () => shareInvoicePdf(args))} loading={busy === 'pdf'} style={{ marginTop: 18 }} />
       <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
-        <Button title={t.sendWa} icon="logo-whatsapp" variant="dark" onPress={() => sendWhatsApp(order, t)} style={{ flex: 1 }} small />
+        <Button title={t.sendWa} icon="image-outline" variant="dark" onPress={run('send', async () => {
+          if (await sendInvoiceImage(paper, order, t) === 'shared') showToast(t.msgCopied, 'info');
+        })} loading={busy === 'send'} style={{ flex: 1 }} small />
         <Button title={t.print} icon="print-outline" variant="ghost" onPress={run('print', () => printInvoice(args))} loading={busy === 'print'} style={{ flex: 1 }} small />
       </View>
       <Button title={t.close} variant="ghost" onPress={onClose} style={{ marginTop: 10, opacity: 0.8 }} small />

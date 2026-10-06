@@ -13,16 +13,19 @@ export function waNumber(phone) {
   return d.length === 8 ? `216${d}` : d;
 }
 
-export function sendWhatsApp(order, t) {
-  const msg = fill(t.waMsg, {
+/** The order summary sent to the customer, with the tracking link. */
+export function orderMessage(order, t) {
+  return fill(t.waMsg, {
     name: order.customer,
     no: shortNo(order),
     items: order.items || '',
     total: formatTND(order.total),
     link: trackingUrl(order.code),
   });
-  return Linking.openURL(`https://wa.me/${waNumber(order.phone)}?text=${encodeURIComponent(msg)}`);
 }
+
+/** Opens the customer's WhatsApp chat. */
+export const openWhatsApp = (order) => Linking.openURL(`https://wa.me/${waNumber(order.phone)}`);
 
 export const callCustomer = (order) => Linking.openURL(`tel:${String(order.phone).replace(/[^\d+]/g, '')}`);
 

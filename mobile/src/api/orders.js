@@ -1,5 +1,20 @@
 import { api } from './client';
 
+// Orders already seen in lists, so a scan can show the order instantly.
+const known = new Map();
+const remember = (orders) => { for (const o of orders || []) known.set(o.id, o); return orders; };
+
+/** Instant, offline match of a scanned/typed code against loaded orders. */
+export function findCached(code) {
+  const term = String(code || '').trim().replace(/^#/, '');
+  if (!term) return null;
+  const low = term.toLowerCase();
+  for (const o of known.values()) {
+    if (o.code === term || (term.length >= 4 && String(o.id).endsWith(low))) return o;
+  }
+  return null;
+}
+
 /** Server-side search: name, phone, city, short order number or tracking code. */
 export const listOrders = ({ search, status, source } = {}) => {
   const qs = new URLSearchParams();
@@ -7,17 +22,17 @@ export const listOrders = ({ search, status, source } = {}) => {
   if (status && status !== 'all') qs.set('status', status);
   if (source && source !== 'all') qs.set('source', source);
   const q = qs.toString();
-  return api(`/orders${q ? `?${q}` : ''}`);
+  return api(`/orders${q ? `?${q}` : ''}`).then((data) => { remember(data?.orders); return data; });
 };
 
 export const createOrder = (payload) =>
   api('/orders', { method: 'POST', body: payload, idempotencyKey: randomKey() });
 
-export const updateOrder = (id, patch) => api(`/orders/${id}`, { method: 'PATCH', body: patch });
+export const updateOrder = (id, patch) => api(`/orders/${id}`, { method: 'PATCH', body: patch }).then((o) => { remember([o]); return o; });
 
 export const deleteOrder = (id) => api(`/orders/${id}`, { method: 'DELETE' });
 
-export const findByCode = (code) => api(`/orders/lookup/${encodeURIComponent(code)}`);
+export const findByCode = (code) => api(`/orders/lookup/${encodeURIComponent(code)}`).then((o) => { remember([o]); return o; });
 
 /** Uploaded invoice (base64 PDF/photo) → the order printed on it. */
 export const findByFile = (data, mimeType) => api('/orders/lookup-file', { method: 'POST', body: { data, mimeType } });

@@ -7,6 +7,7 @@ const { withQuota } = require('../middleware/quota');
 const { trackingCode } = require('../lib/tracking');
 const { annotate } = require('../lib/stock');
 const { readInvoiceCode } = require('../services/aiPipeline');
+const { codeFromPdf } = require('../lib/invoiceFile');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -78,6 +79,12 @@ const fileSchema = z.object({
 });
 
 router.post('/lookup-file', validate(fileSchema), async (req, res) => {
+  // Our own PDFs: read the text directly (instant); otherwise ask the AI.
+  if (req.body.mimeType === 'application/pdf') {
+    const term = await codeFromPdf(req.body.data);
+    const order = term && await findByTerm(req.user.id, term);
+    if (order) return res.json((await annotate([serialize(order)]))[0]);
+  }
   const { code, error } = await readInvoiceCode(req.body);
   if (error) return res.status(503).json({ error: error === 'no_key' ? 'ai_no_key' : 'ai_busy' });
   if (!code) return res.status(404).json({ error: 'no_code' });

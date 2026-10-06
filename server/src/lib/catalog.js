@@ -52,4 +52,7 @@ async function getCatalog() {
   }
 }
 
-module.exports = { getCatalog, cleanTitle };
+/** The in-memory catalog if it is fresh, else null (never waits on the shop). */
+const freshCatalog = () => (Date.now() - cache.at < TTL_MS && cache.items.length ? cache.items : null);
+
+module.exports = { getCatalog, freshCatalog, cleanTitle };

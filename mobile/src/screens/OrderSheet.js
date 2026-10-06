@@ -13,7 +13,7 @@ import { Txt, Press, Chip, Button, Divider, haptic } from '../components/ui';
 import { STATUS_KEYS, STATUS_COLORS, PAY_KEYS, PAY_COLORS, srcOf, GREEN } from '../theme';
 import { formatTND } from '../lib/money';
 import { updateOrder, deleteOrder, shortNo } from '../api/orders';
-import { sendWhatsApp, callCustomer, ltr } from '../lib/orderActions';
+import { openWhatsApp, callCustomer, ltr } from '../lib/orderActions';
 import { trackingUrl } from '../config';
 
 /** Full order view: change status/payment, invoice, contact, edit, delete. */
@@ -132,7 +132,7 @@ export default function OrderSheet({ order: initial, onClose, onChanged, onInvoi
       <View style={{ gap: 12 }}>
         <View style={{ flexDirection: 'row', gap: 12 }}>
           <Action icon="document-text-outline" label={t.invoice} onPress={() => onInvoice(order)} />
-          <Action icon="logo-whatsapp" label={t.src_whatsapp} color={GREEN} onPress={() => sendWhatsApp(order, t)} />
+          <Action icon="logo-whatsapp" label={t.src_whatsapp} color={GREEN} onPress={() => openWhatsApp(order)} />
         </View>
         <View style={{ flexDirection: 'row', gap: 12 }}>
           <Action icon="call-outline" label={t.call} onPress={() => callCustomer(order)} />
