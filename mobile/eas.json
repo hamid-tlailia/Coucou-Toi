@@ -10,7 +10,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://REPLACE-WITH-YOUR-SERVER.onrender.com"
+        "EXPO_PUBLIC_API_URL": "https://coco-love-api.vercel.app"
       },
       "ios": {
         "simulator": false,
@@ -27,7 +27,7 @@
     "production": {
       "distribution": "store",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://REPLACE-WITH-YOUR-SERVER.onrender.com"
+        "EXPO_PUBLIC_API_URL": "https://coco-love-api.vercel.app"
       },
       "ios": {
         "resourceClass": "m-medium"
