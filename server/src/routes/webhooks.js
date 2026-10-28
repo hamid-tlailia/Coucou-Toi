@@ -252,6 +252,30 @@ function messengerLikeHandler(channel) {
   };
 }
 
+/*
+ * Setup check for the Page link, guarded by the webhook verify token:
+ *   GET  /webhooks/messenger/diag?key=…          → which apps the Page delivers to, and with which fields
+ *   GET  /webhooks/messenger/diag?key=…&fix=1    → (re)subscribes this app to the Page's messages
+ * Returns only ids, names and field lists — never tokens or messages.
+ */
+router.get('/messenger/diag', async (req, res) => {
+  const expected = process.env.MESSENGER_VERIFY_TOKEN || process.env.META_VERIFY_TOKEN;
+  if (!expected || req.query.key !== expected) return res.sendStatus(403);
+  const pageId = process.env.MESSENGER_PAGE_ID;
+  const token = env(ENV_CHANNELS.facebook.token);
+  if (!pageId || !token) return res.json({ error: 'MESSENGER_PAGE_ID / MESSENGER_ACCESS_TOKEN missing' });
+  const q = `access_token=${encodeURIComponent(token)}`;
+  const out = {};
+  if (req.query.fix) {
+    const r = await fetch(`${GRAPH}/${pageId}/subscribed_apps?subscribed_fields=messages,messaging_postbacks,message_reads&${q}`, { method: 'POST' });
+    out.subscribe = await r.json().catch(() => r.status);
+  }
+  const me = await fetch(`${GRAPH}/me?fields=id,name&${q}`).then((r) => r.json()).catch((e) => ({ error: e.message }));
+  out.token_is_for = me;
+  out.subscribed_apps = await fetch(`${GRAPH}/${pageId}/subscribed_apps?${q}`).then((r) => r.json()).catch((e) => ({ error: e.message }));
+  res.json(out);
+});
+
 router.post('/instagram', verifyMetaSignature, messengerLikeHandler('instagram'));
 router.post('/messenger', verifyMetaSignature, messengerLikeHandler('facebook'));
 
