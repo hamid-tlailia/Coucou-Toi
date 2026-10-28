@@ -19,6 +19,7 @@ async function notify(userId, { type, title, body, orderId = null }) {
     const n = await prisma.notification.create({ data: { userId, type, title, body, orderId } });
     const user = await prisma.user.findUnique({ where: { id: userId }, select: { pushToken: true, webPushSub: true } });
     const payload = { title, body, data: { type, orderId, notificationId: n.id } };
+    console.log(`notify ${type}: phone=${user?.pushToken ? 'yes' : 'no'} web=${user?.webPushSub ? 'yes' : 'no'}`);
     if (user?.pushToken) {
       if (user.pushToken.startsWith('ExponentPushToken')) await sendExpo(user.pushToken, payload);
       else await sendFcm(user.pushToken, payload);
@@ -101,9 +102,11 @@ async function sendWebPush(userId, sub, payload) {
   if (!vapid()) return;
   try {
     await webpush.sendNotification(JSON.parse(sub), JSON.stringify(payload), { TTL: 24 * 3600, urgency: 'high' });
+    console.log('web push sent');
   } catch (e) {
     // Subscription gone (app removed from the home screen / permission revoked).
     if (e.statusCode === 404 || e.statusCode === 410) {
+      console.warn('web push subscription expired', e.statusCode);
       await prisma.user.update({ where: { id: userId }, data: { webPushSub: null } }).catch(() => {});
     } else console.error('web push failed', e.statusCode, e.body || e.message);
   }
