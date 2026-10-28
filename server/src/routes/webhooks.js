@@ -170,6 +170,7 @@ async function profileName(psid, token, fields) {
  * ============================================================ */
 router.post('/whatsapp', verifyMetaSignature, (req, res) => {
   res.sendStatus(200); // ack immediately — Meta retries aggressively on anything else
+  logDelivery('whatsapp', req.body);
   background((async () => {
     for (const entry of req.body?.entry || []) {
       for (const change of entry.changes || []) {
@@ -201,9 +202,20 @@ router.post('/whatsapp', verifyMetaSignature, (req, res) => {
  * Instagram DM & Messenger — both delivered via the same Graph API
  * "messaging" entry shape once subscribed on a page.
  * ============================================================ */
+// One line per delivery (kinds only, never message text) — shows in Vercel logs.
+function logDelivery(channel, body) {
+  const kinds = (body?.entry || []).flatMap((e) => [
+    ...(e.messaging || []).map((m) => (m.message ? (m.message.is_echo ? 'echo' : 'message') : Object.keys(m).find((k) => !['sender', 'recipient', 'timestamp'].includes(k)) || 'other')),
+    ...(e.standby || []).map(() => 'standby'),
+    ...(e.changes || []).map((c) => c.field || 'change'),
+  ]);
+  console.log(`webhook ${channel}: ${kinds.join(',') || 'empty'}`);
+}
+
 function messengerLikeHandler(channel) {
   return (req, res) => {
     res.sendStatus(200);
+    logDelivery(channel, req.body);
     background((async () => {
       for (const entry of req.body?.entry || []) {
         // "standby": the conversation is handled by another app (e.g. Meta's
@@ -228,11 +240,12 @@ function messengerLikeHandler(channel) {
 
           const senderId = messaging.sender?.id;
           const fields = channel === 'instagram' ? 'name,username' : 'name';
-          await intakeMessage({
+          const out = await intakeMessage({
             userId: account.userId, source: channel,
             sender: senderId, senderName: await profileName(senderId, account.accessToken, fields),
             text, media, keepOnFailure: true,
           });
+          console.log(`webhook ${channel}: intake ${out.result}`);
         }
       }
     })().catch((e) => console.error(`${channel} webhook failed`, e)));
