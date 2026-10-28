@@ -111,7 +111,32 @@ async function channelAccountFor(channel, externalId) {
     return null;
   }
   const userId = await storeOwnerId();
-  return userId ? { userId, accessToken: env(c.token) } : null;
+  if (!userId) return null;
+  const token = env(c.token);
+  const pageId = channel === 'facebook' ? process.env.MESSENGER_PAGE_ID : null;
+  return { userId, accessToken: pageId ? await pageTokenFor(pageId, token) : token };
+}
+
+/*
+ * The token in the environment may be a Page token (Messenger settings →
+ * Generate) or a System User token (Business settings → System users),
+ * which never expires. Page calls need a Page token, so a System User
+ * token is exchanged for the Page's own token once and cached.
+ */
+const pageTokens = new Map();
+async function pageTokenFor(pageId, token) {
+  if (!pageId || !token || token.startsWith('IG')) return token;
+  const key = `${pageId}:${token.slice(-12)}`;
+  if (!pageTokens.has(key)) {
+    try {
+      const r = await fetch(`${GRAPH}/${pageId}?fields=access_token&access_token=${encodeURIComponent(token)}`);
+      const j = await r.json();
+      pageTokens.set(key, j.access_token || token);
+    } catch {
+      return token;
+    }
+  }
+  return pageTokens.get(key);
 }
 
 /* ============================================================
@@ -262,7 +287,7 @@ router.get('/messenger/diag', async (req, res) => {
   const expected = process.env.MESSENGER_VERIFY_TOKEN || process.env.META_VERIFY_TOKEN;
   if (!expected || req.query.key !== expected) return res.sendStatus(403);
   const pageId = process.env.MESSENGER_PAGE_ID;
-  const token = env(ENV_CHANNELS.facebook.token);
+  const token = await pageTokenFor(pageId, env(ENV_CHANNELS.facebook.token));
   if (!pageId || !token) return res.json({ error: 'MESSENGER_PAGE_ID / MESSENGER_ACCESS_TOKEN missing' });
   const q = `access_token=${encodeURIComponent(token)}`;
   const out = {};
