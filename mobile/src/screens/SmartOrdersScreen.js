@@ -50,7 +50,7 @@ export default function SmartOrdersScreen({ refreshKey, shared, onApproved, onCo
       showToast(msg, draft.aiStatus === 'ok' ? 'ok' : 'info');
     } catch (e) {
       // The text stays in the box, so a busy AI can simply be retried.
-      const msg = { not_order: t.notOrder, ai_busy: t.aiBusy, network: t.offline }[e.code] || t.error;
+      const msg = { not_order: t.notOrder, ai_busy: t.aiBusy, ai_quota: t.aiQuota, network: t.offline }[e.code] || t.error;
       haptic(e.code === 'not_order' ? 'medium' : 'error');
       showToast(msg, e.code === 'not_order' ? 'info' : 'error');
     } finally {

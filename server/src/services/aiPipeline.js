@@ -72,25 +72,44 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
  * one, later passes retry after a pause. Returns the response or null.
  */
 async function callGemini(parts) {
+  // Whole attempt stays well inside the 30 s serverless limit.
+  const deadline = Date.now() + 22000;
+  const outOfQuota = new Set(); // daily quota gone: retrying that model today is pointless
   for (const pass of [0, 1, 2]) {
     if (pass) await sleep(pass * 1500);
     for (const model of MODELS) {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': process.env.GEMINI_API_KEY },
-          body: JSON.stringify({
-            contents: [{ role: 'user', parts }],
-            generationConfig: { responseMimeType: 'application/json', temperature: 0.1 },
-          }),
-        }
-      );
+      if (outOfQuota.has(model)) continue;
+      const left = deadline - Date.now();
+      if (left < 2000) return outOfQuota.size === MODELS.length ? { quota: true } : null;
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), Math.min(12000, left));
+      let res;
+      try {
+        res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-goog-api-key': process.env.GEMINI_API_KEY },
+            body: JSON.stringify({
+              contents: [{ role: 'user', parts }],
+              generationConfig: { responseMimeType: 'application/json', temperature: 0.1 },
+            }),
+            signal: ctrl.signal,
+          }
+        );
+      } catch {
+        console.error(`gemini ${model} timed out`);
+        continue;
+      } finally {
+        clearTimeout(timer);
+      }
       if (res.ok) return res.json();
       const body = await res.text().catch(() => '');
       console.error(`gemini ${model} failed`, res.status, body.slice(0, 300));
       if ([400, 401, 403].includes(res.status)) return null; // bad key/request: retrying won't help
+      if (res.status === 429 && /quota/i.test(body)) outOfQuota.add(model);
     }
+    if (outOfQuota.size === MODELS.length) return { quota: true };
   }
   return null;
 }
@@ -125,6 +144,7 @@ async function extractOrder({ text, imageUrl, media = [] }) {
     }
 
     const data = await callGemini(parts);
+    if (data?.quota) return empty('quota');
     if (!data) return empty('failed');
 
     const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
